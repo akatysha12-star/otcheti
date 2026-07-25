@@ -142,14 +142,24 @@ st.markdown(f"""
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }}
     
-    /* СОЛНЦЕ - позиционируем абсолютно, не fixed */
+    /* ЗАГОЛОВОК С СОЛНЦЕМ - через flexbox */
+    .title-container {{
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        padding: 10px 0;
+    }}
+    
+    .title-container h1 {{
+        margin: 0;
+        flex: 1;
+    }}
+    
     .celestial-body {{
-        position: absolute;
-        top: 20px;
-        right: 50px;
         font-size: 3em;
-        z-index: 100;
-        pointer-events: none;
+        margin-left: 20px;
+        flex-shrink: 0;
     }}
     
     .stars {{
@@ -331,8 +341,15 @@ def get_local_gif():
 
 # ==================== ГЛАВНАЯ СТРАНИЦА ====================
 
-st.markdown(f'<div class="celestial-body">{sky_style["celestial"]}</div>', unsafe_allow_html=True)
+# Заголовок с солнцем через flexbox
+st.markdown(f"""
+<div class="title-container">
+    <h1>📊 Система формирования отчётов</h1>
+    <div class="celestial-body">{sky_style["celestial"]}</div>
+</div>
+""", unsafe_allow_html=True)
 
+# Звёзды для ночи
 if time_of_day == "night":
     stars_html = '<div class="stars">'
     import random
@@ -345,21 +362,21 @@ if time_of_day == "night":
     stars_html += '</div>'
     st.markdown(stars_html, unsafe_allow_html=True)
 
-st.title("📊 Система формирования отчётов")
-
+# Приветствие
 st.markdown(f"""
 <div class="info-block">
     <h3 style="color: {sky_style['text_color']}; margin-top: 0;">👋 Доброго прекрасного денёчка!</h3>
     <p style="font-size: 1.1em; color: {sky_style['text_color']};">
         Здесь вы можете формировать отчёты в один клик.<br>
-        👈 <b>Выберите нужный отчёт в боковом меню слева.</b>
+         <b>Выберите нужный отчёт в боковом меню слева.</b>
     </p>
 </div>
 """, unsafe_allow_html=True)
 
+# Доступные отчёты
 st.markdown(f"""
 <div class="report-card">
-    <h3 style="color: {sky_style['text_color']}; margin-top: 0;"> Доступные отчёты:</h3>
+    <h3 style="color: {sky_style['text_color']}; margin-top: 0;">📋 Доступные отчёты:</h3>
 </div>
 """, unsafe_allow_html=True)
 
@@ -376,7 +393,7 @@ with col1:
 with col2:
     st.markdown(f"""
     <div class="report-card">
-        <h4 style="color: {sky_style['text_color']};">📆 КР неделя</h4>
+        <h4 style="color: {sky_style['text_color']};"> КР неделя</h4>
         <p style="color: {sky_style['text_color']};">Еженедельный сводный отчёт</p>
     </div>
     """, unsafe_allow_html=True)
@@ -384,18 +401,16 @@ with col2:
 with col3:
     st.markdown(f"""
     <div class="report-card">
-        <h4 style="color: {sky_style['text_color']};"> Продукт</h4>
-        <p style="color: {sky_style['text_color']};">Полный отчёт по продуктам </p>
+        <h4 style="color: {sky_style['text_color']};">🍕 Продукт</h4>
+        <p style="color: {sky_style['text_color']};">Полный отчёт по продуктам</p>
     </div>
     """, unsafe_allow_html=True)
 
+# Праздник и GIF
 holiday_message = get_today_holiday()
 gif_data = get_local_gif()
 
-if "День" in holiday_message:
-    congratulation = f"🎉 Сгодня праздник {holiday_message}! 🎊"
-else:
-    congratulation = f"🎉 {holiday_message} 🎊"
+congratulation = f" Сегодня праздник {holiday_message}! 🎊"
 
 if gif_data:
     st.markdown(f"""
@@ -415,6 +430,7 @@ else:
     </div>
     """, unsafe_allow_html=True)
 
+# Индикатор времени
 time_names = {
     "night": "🌙 Ночь",
     "dawn": "🌅 Рассвет",
@@ -426,9 +442,10 @@ time_names = {
 current_time = datetime.now().strftime("%H:%M")
 st.markdown(f'<div class="time-indicator">{time_names[time_of_day]} | {current_time}</div>', unsafe_allow_html=True)
 
+# Дополнительная информация
 st.markdown(f"""
 <div style="margin-top: 40px; text-align: center; color: {sky_style['text_color']}; opacity: 0.8;">
-    <p> <i>Все отчёты генерируются автоматически и сохраняются в формате Excel</i></p>
+    <p>💡 <i>Все отчёты генерируются автоматически и сохраняются в формате Excel</i></p>
     <p style="font-size: 0.9em; margin-top: 20px;">
         Система отчётов КР © 2026
     </p>
