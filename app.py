@@ -2,6 +2,7 @@ import streamlit as st
 import json
 from datetime import datetime
 import os
+import base64
 
 st.set_page_config(
     page_title="Система отчетов КР", 
@@ -41,6 +42,12 @@ st.markdown("""
     .stApp > div {
         position: relative;
         z-index: 1;
+    }
+    
+    /* ВЕРХНЯЯ ПОЛОСКА (HEADER) - измените цвет здесь */
+    .stApp header {
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%) !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
     
     /* Заголовок */
@@ -89,18 +96,30 @@ st.markdown("""
         background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
     }
     
-    /* Праздничная строка */
+    /* Праздничная строка с гифкой */
+    .holiday-section {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 30px;
+        margin-top: 30px;
+        padding: 20px;
+        background: rgba(255,255,255,0.9);
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
     .holiday-banner {
         background: linear-gradient(90deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
         color: #1a365d;
-        padding: 15px;
+        padding: 15px 30px;
         border-radius: 10px;
         text-align: center;
         font-size: 1.3em;
         font-weight: bold;
-        margin-top: 30px;
         box-shadow: 0 4px 15px rgba(255,215,0,0.3);
         animation: shimmer 3s infinite;
+        flex: 1;
     }
     
     @keyframes shimmer {
@@ -111,10 +130,13 @@ st.markdown("""
     /* Гифка контейнер */
     .gif-container {
         text-align: center;
-        margin: 20px 0;
-        padding: 20px;
-        background: rgba(255,255,255,0.5);
-        border-radius: 15px;
+        flex: 0 0 auto;
+    }
+    
+    .gif-container img {
+        max-width: 200px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
     }
     
     /* Блоки информации */
@@ -148,23 +170,29 @@ def get_today_holiday():
             if today_key in holidays:
                 return holidays[today_key]
         
-        return "🎉 Хорошего дня!"
+        return " Хорошего дня!"
     except Exception as e:
         return "🌟 Отличного настроения!"
+
+# ==================== ФУНКЦИЯ ДЛЯ ЗАГРУЗКИ GIF ====================
+
+def get_local_gif():
+    """Загружает локальную GIF из папки assets/"""
+    try:
+        gif_path = os.path.join(os.path.dirname(__file__), 'assets', 'animation.gif')
+        if os.path.exists(gif_path):
+            with open(gif_path, 'rb') as f:
+                gif_bytes = f.read()
+                gif_base64 = base64.b64encode(gif_bytes).decode()
+                return f"data:image/gif;base64,{gif_base64}"
+        return None
+    except:
+        return None
 
 # ==================== ГЛАВНАЯ СТРАНИЦА ====================
 
 # Заголовок
-st.title("📊 Система формирования отчётов")
-
-# Гифка (встроена через URL)
-st.markdown("""
-<div class="gif-container">
-    <img src="https://media.giphy.com/media/l0HlNQ03J5JxX6lva/giphy.gif" 
-         alt="Working Animation" 
-         style="max-width: 400px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-</div>
-""", unsafe_allow_html=True)
+st.title(" Система формирования отчётов")
 
 # Приветствие
 st.markdown("""
@@ -189,7 +217,7 @@ col1, col2, col3 = st.columns(3)
 with col1:
     st.markdown("""
     <div class="report-card">
-        <h4 style="color: #667eea;"> КР месяц</h4>
+        <h4 style="color: #667eea;">📅 КР месяц</h4>
         <p>Сводный отчёт за месяц с фильтрацией</p>
     </div>
     """, unsafe_allow_html=True)
@@ -210,18 +238,34 @@ with col3:
     </div>
     """, unsafe_allow_html=True)
 
-# Праздничная строка (если есть праздник)
+# Праздник и GIF внизу
 holiday_message = get_today_holiday()
-st.markdown(f"""
-<div class="holiday-banner">
-     {holiday_message} 
-</div>
-""", unsafe_allow_html=True)
+gif_data = get_local_gif()
+
+# Если есть локальная GIF, показываем её рядом с праздником
+if gif_data:
+    st.markdown(f"""
+    <div class="holiday-section">
+        <div class="holiday-banner">
+             {holiday_message}
+        </div>
+        <div class="gif-container">
+            <img src="{gif_data}" alt="Праздничная анимация">
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    # Если GIF нет, показываем только праздник
+    st.markdown(f"""
+    <div class="holiday-banner" style="max-width: 600px; margin: 30px auto;">
+         {holiday_message}
+    </div>
+    """, unsafe_allow_html=True)
 
 # Дополнительная информация
 st.markdown("""
 <div style="margin-top: 40px; text-align: center; color: #1a365d; opacity: 0.8;">
-    <p>💡 <i>Все отчёты генерируются автоматически и сохраняются в формате Excel</i></p>
+    <p> <i>Все отчёты генерируются автоматически и сохраняются в формате Excel</i></p>
     <p style="font-size: 0.9em; margin-top: 20px;">
         Система отчётов КР © 2026
     </p>
