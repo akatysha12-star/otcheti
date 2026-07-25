@@ -43,7 +43,8 @@ def get_sky_css():
             "celestial_pos": "top: 10%; right: 10%;",
             "text_color": "#e0e0e0",
             "card_bg": "rgba(30, 30, 60, 0.85)",
-            "info_border": "#4a5568"
+            "info_border": "#4a5568",
+            "sidebar_bg": "linear-gradient(180deg, #1a1a2e 0%, #16213e 100%)"
         },
         "dawn": {
             "header_bg": "linear-gradient(90deg, #ff6b6b 0%, #feca57 50%, #ff9ff3 100%)",
@@ -53,17 +54,19 @@ def get_sky_css():
             "celestial_pos": "top: 15%; right: 15%;",
             "text_color": "#2d3748",
             "card_bg": "rgba(255, 240, 245, 0.9)",
-            "info_border": "#ff6b6b"
+            "info_border": "#ff6b6b",
+            "sidebar_bg": "linear-gradient(180deg, #ff6b6b 0%, #feca57 100%)"
         },
         "morning": {
             "header_bg": "linear-gradient(90deg, #74b9ff 0%, #a29bfe 50%, #fd79a8 100%)",
             "body_bg": "linear-gradient(180deg, #74b9ff 0%, #a8e6cf 40%, #dcedc1 100%)",
             "cloud_color": "rgba(255,255,255,0.7)",
-            "celestial": "☀️",
+            "celestial": "️",
             "celestial_pos": "top: 10%; right: 20%;",
             "text_color": "#1a365d",
             "card_bg": "rgba(255, 255, 255, 0.9)",
-            "info_border": "#74b9ff"
+            "info_border": "#74b9ff",
+            "sidebar_bg": "linear-gradient(180deg, #74b9ff 0%, #a29bfe 100%)"
         },
         "day": {
             "header_bg": "linear-gradient(90deg, #667eea 0%, #764ba2 100%)",
@@ -73,7 +76,8 @@ def get_sky_css():
             "celestial_pos": "top: 5%; right: 10%;",
             "text_color": "#1a365d",
             "card_bg": "rgba(255, 255, 255, 0.9)",
-            "info_border": "#667eea"
+            "info_border": "#667eea",
+            "sidebar_bg": "linear-gradient(180deg, #667eea 0%, #764ba2 100%)"
         },
         "evening": {
             "header_bg": "linear-gradient(90deg, #ff7e5f 0%, #feb47b 50%, #ff6b6b 100%)",
@@ -83,7 +87,8 @@ def get_sky_css():
             "celestial_pos": "top: 20%; right: 15%;",
             "text_color": "#2d3748",
             "card_bg": "rgba(255, 245, 230, 0.9)",
-            "info_border": "#ff7e5f"
+            "info_border": "#ff7e5f",
+            "sidebar_bg": "linear-gradient(180deg, #ff7e5f 0%, #feb47b 100%)"
         },
         "dusk": {
             "header_bg": "linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%)",
@@ -93,7 +98,8 @@ def get_sky_css():
             "celestial_pos": "top: 15%; right: 10%;",
             "text_color": "#e0e0e0",
             "card_bg": "rgba(40, 40, 80, 0.85)",
-            "info_border": "#764ba2"
+            "info_border": "#764ba2",
+            "sidebar_bg": "linear-gradient(180deg, #667eea 0%, #764ba2 100%)"
         }
     }
     
@@ -137,7 +143,7 @@ st.markdown(f"""
         z-index: 1;
     }}
     
-    /* ВЕРХНЯЯ ПОЛОСКА (HEADER) - меняется в зависимости от времени суток */
+    /* ВЕРХНЯЯ ПОЛОСКА (HEADER) */
     .stApp header {{
         background: {sky_style['header_bg']} !important;
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -204,9 +210,15 @@ st.markdown(f"""
         box-shadow: 0 6px 20px rgba(0,0,0,0.15);
     }}
     
-    /* Боковое меню */
+    /* Боковое меню - украшенное */
     .css-1d391kg {{
-        background: {sky_style['header_bg']};
+        background: {sky_style['sidebar_bg']};
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    }}
+    
+    /* Элементы бокового меню */
+    .stSidebar {{
+        background: {sky_style['sidebar_bg']};
     }}
     
     /* Кнопки */
@@ -233,22 +245,23 @@ st.markdown(f"""
         justify-content: center;
         gap: 30px;
         margin-top: 30px;
-        padding: 20px;
+        padding: 25px;
         background: {sky_style['card_bg']};
         border-radius: 15px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         flex-wrap: wrap;
+        border: 3px solid gold;
     }}
     
     .holiday-banner {{
         background: linear-gradient(90deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
         color: #1a365d;
-        padding: 15px 30px;
-        border-radius: 10px;
+        padding: 20px 30px;
+        border-radius: 15px;
         text-align: center;
-        font-size: 1.3em;
+        font-size: 1.4em;
         font-weight: bold;
-        box-shadow: 0 4px 15px rgba(255,215,0,0.3);
+        box-shadow: 0 4px 15px rgba(255,215,0,0.4);
         animation: shimmer 3s infinite;
         flex: 1;
         min-width: 250px;
@@ -266,9 +279,10 @@ st.markdown(f"""
     }}
     
     .gif-container img {{
-        max-width: 200px;
-        border-radius: 10px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        max-width: 250px;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        border: 3px solid gold;
     }}
     
     /* Блоки информации */
@@ -291,6 +305,18 @@ st.markdown(f"""
         font-size: 0.9em;
         color: {sky_style['text_color']};
         z-index: 10;
+    }}
+    
+    /* Украшение для боковой панели */
+    .sidebar-decoration {{
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 0;
+        opacity: 0.1;
     }}
 </style>
 """, unsafe_allow_html=True)
@@ -355,7 +381,7 @@ st.title("📊 Система формирования отчётов")
 # Приветствие
 st.markdown(f"""
 <div class="info-block">
-    <h3 style="color: {sky_style['text_color']}; margin-top: 0;"> Доброго прекрасного денёчка!</h3>
+    <h3 style="color: {sky_style['text_color']}; margin-top: 0;">👋 Доброго прекрасного денёчка!</h3>
     <p style="font-size: 1.1em; color: {sky_style['text_color']};">
         Здесь вы можете формировать отчёты в один клик.<br>
         👈 <b>Выберите нужный отчёт в боковом меню слева.</b>
@@ -375,7 +401,7 @@ col1, col2, col3 = st.columns(3)
 with col1:
     st.markdown(f"""
     <div class="report-card">
-        <h4 style="color: {sky_style['text_color']};">📅 КР месяц</h4>
+        <h4 style="color: {sky_style['text_color']};"> КР месяц</h4>
         <p style="color: {sky_style['text_color']};">Сводный отчёт за месяц с фильтрацией</p>
     </div>
     """, unsafe_allow_html=True)
@@ -383,7 +409,7 @@ with col1:
 with col2:
     st.markdown(f"""
     <div class="report-card">
-        <h4 style="color: {sky_style['text_color']};">📆 КР неделя</h4>
+        <h4 style="color: {sky_style['text_color']};"> КР неделя</h4>
         <p style="color: {sky_style['text_color']};">Еженедельный сводный отчёт</p>
     </div>
     """, unsafe_allow_html=True)
@@ -400,11 +426,17 @@ with col3:
 holiday_message = get_today_holiday()
 gif_data = get_local_gif()
 
+# Формируем поздравление
+if "День" in holiday_message:
+    congratulation = f"🎉 Поздравляю с {holiday_message}! 🎊"
+else:
+    congratulation = f"🎉 {holiday_message} 🎊"
+
 if gif_data:
     st.markdown(f"""
     <div class="holiday-section">
         <div class="holiday-banner">
-            🎉 {holiday_message}
+            {congratulation}
         </div>
         <div class="gif-container">
             <img src="{gif_data}" alt="Праздничная анимация">
@@ -414,18 +446,18 @@ if gif_data:
 else:
     st.markdown(f"""
     <div class="holiday-banner" style="max-width: 600px; margin: 30px auto;">
-        🎉 {holiday_message}
+        {congratulation}
     </div>
     """, unsafe_allow_html=True)
 
 # Индикатор времени суток
 time_names = {
     "night": "🌙 Ночь",
-    "dawn": "🌅 Рассвет",
+    "dawn": " Рассвет",
     "morning": "🌤️ Утро",
     "day": "☀️ День",
     "evening": "🌇 Вечер",
-    "dusk": " Сумерки"
+    "dusk": "🌆 Сумерки"
 }
 current_time = datetime.now().strftime("%H:%M")
 st.markdown(f'<div class="time-indicator">{time_names[time_of_day]} | {current_time}</div>', unsafe_allow_html=True)
