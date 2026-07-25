@@ -44,7 +44,8 @@ def get_sky_css():
             "text_color": "#e0e0e0",
             "card_bg": "rgba(30, 30, 60, 0.85)",
             "info_border": "#4a5568",
-            "sidebar_bg": "linear-gradient(180deg, #1a1a2e 0%, #16213e 100%)"
+            "sidebar_bg": "linear-gradient(180deg, #1a1a2e 0%, #16213e 100%)",
+            "sidebar_text": "#ffffff"
         },
         "dawn": {
             "header_bg": "linear-gradient(90deg, #ff6b6b 0%, #feca57 50%, #ff9ff3 100%)",
@@ -55,51 +56,56 @@ def get_sky_css():
             "text_color": "#2d3748",
             "card_bg": "rgba(255, 240, 245, 0.9)",
             "info_border": "#ff6b6b",
-            "sidebar_bg": "linear-gradient(180deg, #ff6b6b 0%, #feca57 100%)"
+            "sidebar_bg": "linear-gradient(180deg, #c0392b 0%, #e74c3c 100%)",
+            "sidebar_text": "#ffffff"
         },
         "morning": {
             "header_bg": "linear-gradient(90deg, #74b9ff 0%, #a29bfe 50%, #fd79a8 100%)",
             "body_bg": "linear-gradient(180deg, #74b9ff 0%, #a8e6cf 40%, #dcedc1 100%)",
             "cloud_color": "rgba(255,255,255,0.7)",
-            "celestial": "️",
+            "celestial": "🌤️",
             "celestial_pos": "top: 10%; right: 20%;",
             "text_color": "#1a365d",
             "card_bg": "rgba(255, 255, 255, 0.9)",
             "info_border": "#74b9ff",
-            "sidebar_bg": "linear-gradient(180deg, #74b9ff 0%, #a29bfe 100%)"
+            "sidebar_bg": "linear-gradient(180deg, #2c5282 0%, #3182ce 100%)",
+            "sidebar_text": "#ffffff"
         },
         "day": {
-            "header_bg": "linear-gradient(90deg, #667eea 0%, #764ba2 100%)",
+            "header_bg": "linear-gradient(90deg, #2c5282 0%, #3182ce 100%)",
             "body_bg": "linear-gradient(180deg, #87CEEB 0%, #B0E0E6 40%, #E0F6FF 100%)",
             "cloud_color": "rgba(255,255,255,0.8)",
             "celestial": "☀️",
             "celestial_pos": "top: 5%; right: 10%;",
             "text_color": "#1a365d",
             "card_bg": "rgba(255, 255, 255, 0.9)",
-            "info_border": "#667eea",
-            "sidebar_bg": "linear-gradient(180deg, #667eea 0%, #764ba2 100%)"
+            "info_border": "#2c5282",
+            "sidebar_bg": "linear-gradient(180deg, #1e3a5f 0%, #2c5282 100%)",
+            "sidebar_text": "#ffffff"
         },
         "evening": {
             "header_bg": "linear-gradient(90deg, #ff7e5f 0%, #feb47b 50%, #ff6b6b 100%)",
             "body_bg": "linear-gradient(180deg, #ff9a76 0%, #ffcf48 40%, #ff6b6b 100%)",
             "cloud_color": "rgba(255,220,180,0.7)",
-            "celestial": "🌇",
+            "celestial": "",
             "celestial_pos": "top: 20%; right: 15%;",
             "text_color": "#2d3748",
             "card_bg": "rgba(255, 245, 230, 0.9)",
             "info_border": "#ff7e5f",
-            "sidebar_bg": "linear-gradient(180deg, #ff7e5f 0%, #feb47b 100%)"
+            "sidebar_bg": "linear-gradient(180deg, #c0392b 0%, #e74c3c 100%)",
+            "sidebar_text": "#ffffff"
         },
         "dusk": {
-            "header_bg": "linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%)",
-            "body_bg": "linear-gradient(180deg, #667eea 0%, #764ba2 40%, #2d3561 100%)",
+            "header_bg": "linear-gradient(90deg, #1a365d 0%, #2c5282 50%, #4a5568 100%)",
+            "body_bg": "linear-gradient(180deg, #2d3748 0%, #4a5568 40%, #1a202c 100%)",
             "cloud_color": "rgba(200,180,255,0.5)",
-            "celestial": "🌆",
+            "celestial": "",
             "celestial_pos": "top: 15%; right: 10%;",
             "text_color": "#e0e0e0",
             "card_bg": "rgba(40, 40, 80, 0.85)",
-            "info_border": "#764ba2",
-            "sidebar_bg": "linear-gradient(180deg, #667eea 0%, #764ba2 100%)"
+            "info_border": "#4a5568",
+            "sidebar_bg": "linear-gradient(180deg, #1a365d 0%, #2c5282 100%)",
+            "sidebar_text": "#ffffff"
         }
     }
     
@@ -112,7 +118,7 @@ sky_style, time_of_day = get_sky_css()
 
 st.markdown(f"""
 <style>
-    /* Основной фон - меняется в зависимости от времени суток */
+    /* Основной фон */
     .stApp {{
         background: {sky_style['body_bg']};
         min-height: 100vh;
@@ -137,13 +143,12 @@ st.markdown(f"""
         z-index: 0;
     }}
     
-    /* Контент */
     .stApp > div {{
         position: relative;
         z-index: 1;
     }}
     
-    /* ВЕРХНЯЯ ПОЛОСКА (HEADER) */
+    /* ВЕРХНЯЯ ПОЛОСКА */
     .stApp header {{
         background: {sky_style['header_bg']} !important;
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -210,15 +215,27 @@ st.markdown(f"""
         box-shadow: 0 6px 20px rgba(0,0,0,0.15);
     }}
     
-    /* Боковое меню - украшенное */
-    .css-1d391kg {{
-        background: {sky_style['sidebar_bg']};
-        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+    /* БОКОВАЯ ПАНЕЛЬ - тёмно-синяя с белым текстом */
+    .stSidebar {{
+        background: {sky_style['sidebar_bg']} !important;
     }}
     
-    /* Элементы бокового меню */
-    .stSidebar {{
-        background: {sky_style['sidebar_bg']};
+    .stSidebar > div {{
+        background: {sky_style['sidebar_bg']} !important;
+    }}
+    
+    /* Текст в боковой панели - белый */
+    .stSidebar .stMarkdown,
+    .stSidebar .stText,
+    .stSidebar label,
+    .stSidebar span,
+    .stSidebar a {{
+        color: {sky_style['sidebar_text']} !important;
+    }}
+    
+    /* Ссылки в боковой панели */
+    .stSidebar a:hover {{
+        color: #ffd700 !important;
     }}
     
     /* Кнопки */
@@ -306,18 +323,6 @@ st.markdown(f"""
         color: {sky_style['text_color']};
         z-index: 10;
     }}
-    
-    /* Украшение для боковой панели */
-    .sidebar-decoration {{
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        z-index: 0;
-        opacity: 0.1;
-    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -338,7 +343,7 @@ def get_today_holiday():
             if today_key in holidays:
                 return holidays[today_key]
         
-        return "🌟 Хорошего дня!"
+        return " Хорошего дня!"
     except Exception as e:
         return "🌟 Отличного настроения!"
 
@@ -347,14 +352,20 @@ def get_today_holiday():
 def get_local_gif():
     """Загружает локальную GIF из папки assets/"""
     try:
-        gif_path = os.path.join(os.path.dirname(__file__), 'assets', 'animation.gif')
-        if os.path.exists(gif_path):
-            with open(gif_path, 'rb') as f:
-                gif_bytes = f.read()
-                gif_base64 = base64.b64encode(gif_bytes).decode()
-                return f"data:image/gif;base64,{gif_base64}"
+        # Проверяем разные возможные имена файла
+        possible_names = ['animation.gif', 'animation.GIF', 'Animation.gif', 'my_gif.gif']
+        
+        for name in possible_names:
+            gif_path = os.path.join(os.path.dirname(__file__), 'assets', name)
+            if os.path.exists(gif_path):
+                with open(gif_path, 'rb') as f:
+                    gif_bytes = f.read()
+                    gif_base64 = base64.b64encode(gif_bytes).decode()
+                    return f"data:image/gif;base64,{gif_base64}"
+        
         return None
-    except:
+    except Exception as e:
+        st.warning(f"⚠️ Ошибка загрузки GIF: {e}")
         return None
 
 # ==================== ГЛАВНАЯ СТРАНИЦА ====================
@@ -401,7 +412,7 @@ col1, col2, col3 = st.columns(3)
 with col1:
     st.markdown(f"""
     <div class="report-card">
-        <h4 style="color: {sky_style['text_color']};"> КР месяц</h4>
+        <h4 style="color: {sky_style['text_color']};">📅 КР месяц</h4>
         <p style="color: {sky_style['text_color']};">Сводный отчёт за месяц с фильтрацией</p>
     </div>
     """, unsafe_allow_html=True)
@@ -409,7 +420,7 @@ with col1:
 with col2:
     st.markdown(f"""
     <div class="report-card">
-        <h4 style="color: {sky_style['text_color']};"> КР неделя</h4>
+        <h4 style="color: {sky_style['text_color']};">📆 КР неделя</h4>
         <p style="color: {sky_style['text_color']};">Еженедельный сводный отчёт</p>
     </div>
     """, unsafe_allow_html=True)
@@ -444,16 +455,19 @@ if gif_data:
     </div>
     """, unsafe_allow_html=True)
 else:
+    # Если GIF не найдена, показываем только праздник и предупреждение
     st.markdown(f"""
     <div class="holiday-banner" style="max-width: 600px; margin: 30px auto;">
         {congratulation}
     </div>
     """, unsafe_allow_html=True)
+    
+    st.warning("⚠️ GIF не найдена. Проверьте, что файл называется `animation.gif` и лежит в папке `assets/`")
 
 # Индикатор времени суток
 time_names = {
-    "night": "🌙 Ночь",
-    "dawn": " Рассвет",
+    "night": " Ночь",
+    "dawn": "🌅 Рассвет",
     "morning": "🌤️ Утро",
     "day": "☀️ День",
     "evening": "🌇 Вечер",
