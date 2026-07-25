@@ -16,8 +16,11 @@ st.title("🍕 Отчет Продукт")
 # ==================== НАСТРОЙКИ ====================
 
 CATEGORY_COLORS = {
-    'пиццы': 'FFFFE0', 'закуски': 'F0FFF0', 'напитки': 'F0F8FF',
-    'десерты': 'FFE4E1', 'комбо и радости': 'FFFFFF'
+    'пиццы': 'FFFFE0',
+    'закуски': 'F0FFF0',
+    'напитки': 'F0F8FF',
+    'десерты': 'FFE4E1',
+    'комбо и радости': 'FFFFFF'
 }
 
 CATEGORY_MAPPING = {
@@ -37,19 +40,20 @@ CATEGORY_MAPPING = {
 CATEGORIES_ORDER = ['пиццы', 'закуски', 'напитки', 'десерты', 'комбо и радости']
 CITY_COLUMNS = {'СПБ': {'start': 1, 'end': 7}, 'Тюмень': {'start': 9, 'end': 15}}
 
+# Маппинг пицц по категориям (согласно Категория.docx)
 PIZZA_CATEGORY_MAPPING = {
     7: ["большая бонанза", "итальянская с моцареллой и пепперони", "8 сыров", "любимая папина пицца"],
-    6: ["баварская", "супер папа", "мясная", "маленькая италия", "чеддер и бекон", "с чеддером и беконом", "4 сыра", "четыре сыра"],
+    6: ["баварская", "супер папа", "мясная", "маленькая италия", "чеддер и бекон", "4 сыра", "четыре сыра", "с чеддером и беконом"],
     5: ["альфредо", "цыпленок рэнч", "папа микс", "цыпленок барбекю", "мясное барбекю", "мексиканская"],
-    4: ["цыплёнок флорентина", "гавайская", "двойная пепперони"],
+    4: ["цыпленок флорентина", "гавайская", "двойная пепперони"],
     3: ["пепперони", "ветчина и грибы", "вегетарианская", "маргарита"],
     2: ["капричиоза", "чикен пармеджано", "чизбургер"],
-    1: ["сырная", "пепперони грин", "цыплёнок грин", "деревенская", "домашняя", "нежная"],
+    1: ["сырная пицца", "сырная", "пепперони грин", "цыплёнок грин", "деревенская", "домашняя", "нежная"],
     'Сезонные': ["тоскана", "мишка"]
 }
 PIZZA_CATEGORY_ORDER = [7, 6, 5, 4, 3, 2, 1, 'Сезонные']
 
-# ==================== ФУНКЦИИ ====================
+# ==================== ФУНКЦИИ ПАРСИНГА ====================
 
 def clean_dish_name(name):
     if not isinstance(name, str): return ""
@@ -78,12 +82,13 @@ def normalize_text(text):
     text = text.lower().replace('"', '')
     text = re.sub(r'\(.*?\)', '', text)
     text = re.sub(r'^пицца\s*', '', text)
+    text = re.sub(r'\bпромо\b', '', text)
+    text = re.sub(r'\bподарок\b', '', text)
     text = re.sub(r'\s+', ' ', text).strip()
     return text
 
 def find_category(pizza_name):
     normalized_pizza = normalize_text(pizza_name)
-    if 'промо' in normalized_pizza: normalized_pizza = normalized_pizza.replace('промо', '').strip()
     if normalized_pizza == "с чеддером и беконом": return 6
     for cat_num in PIZZA_CATEGORY_ORDER:
         if cat_num == 'Сезонные': continue
@@ -102,7 +107,6 @@ def extract_size(category):
     return None
 
 def read_main_file_raw(uploaded_file):
-    """Читает основной файл и возвращает СЫРОЙ DataFrame."""
     df = pd.read_excel(uploaded_file, header=None)
     header_row = None
     for idx, row in df.iterrows():
@@ -127,7 +131,6 @@ def read_main_file_raw(uploaded_file):
     return df
 
 def parse_main_file(uploaded_file):
-    """Возвращает сгруппированный DataFrame для листа Рейтинг."""
     df = read_main_file_raw(uploaded_file)
     df = df[~df['Блюдо'].apply(is_half_pizza)]
     df['Категория_отчёт'] = df['Категория блюда'].astype(str).str.strip().str.lower().map(CATEGORY_MAPPING)
@@ -140,7 +143,6 @@ def parse_main_file(uploaded_file):
     }).reset_index()
 
 def parse_combo_file(uploaded_file):
-    """Парсит файл комбо. Возвращает сгруппированный DataFrame."""
     df = pd.read_excel(uploaded_file, header=None)
     header_row = None
     for idx, row in df.iterrows():
@@ -156,20 +158,15 @@ def parse_combo_file(uploaded_file):
     df['Юридическое лицо'] = df['Юридическое лицо'].ffill()
     df = df[~df['Юридическое лицо'].astype(str).str.contains('всего|Итого', na=False)]
     df = df[~df['Название Комбо'].astype(str).str.lower().str.contains('персонал', na=False)]
+    df = df[~df['Название Комбо'].astype(str).str.lower().str.contains('мастер', na=False)]
     df = df[df['Название Комбо'].notna()]
     df = df[df['Название Комбо'].astype(str).str.strip() != '']
     df['Количество Комбо'] = pd.to_numeric(df['Количество Комбо'], errors='coerce').fillna(0)
     df['Сумма со скидкой, р.'] = pd.to_numeric(df['Сумма со скидкой, р.'], errors='coerce').fillna(0)
     df['Чеков'] = pd.to_numeric(df['Чеков'], errors='coerce').fillna(0)
-    
-    # ✅ Переименовываем в 'Блюдо_очищенное' (единое имя для всех листов)
-    df = df.rename(columns={
-        'Название Комбо': 'Блюдо_очищенное',
-        'Количество Комбо': 'Количество блюд'
-    })
+    df = df.rename(columns={'Название Комбо': 'Блюдо_очищенное', 'Количество Комбо': 'Количество блюд'})
     df['Блюдо_очищенное'] = df['Блюдо_очищенное'].apply(clean_dish_name)
     df['Категория_отчёт'] = 'комбо и радости'
-    
     return df.groupby(['Юридическое лицо', 'Категория_отчёт', 'Блюдо_очищенное']).agg({
         'Количество блюд': 'sum', 'Сумма со скидкой, р.': 'sum', 'Чеков': 'sum'
     }).reset_index()
@@ -259,6 +256,7 @@ def create_pizza_sheet(wb, df_main_raw):
     def aggregate_data(df):
         result = {}
         for _, row in df.iterrows():
+            if '+' in str(row['Блюдо']): continue
             size = extract_size(str(row['Категория блюда']))
             if size is None: continue
             normalized_name = normalize_text(str(row['Блюдо'])).title()
@@ -336,7 +334,6 @@ def create_combo_sheet(wb, df_combo):
     df_combo = df_combo.copy()
     df_combo['Город'] = df_combo['Юридическое лицо'].apply(map_city)
     df_combo = df_combo[df_combo['Город'].notna()]
-    df_combo = df_combo[~df_combo['Блюдо_очищенное'].str.lower().str.contains('мастер', na=False)]
     grouped = df_combo.groupby(['Город', 'Блюдо_очищенное']).agg({
         'Количество блюд': 'sum', 'Сумма со скидкой, р.': 'sum'
     }).reset_index()
@@ -664,7 +661,7 @@ with col2:
 if file_main and file_combo:
     st.success("✅ Оба файла загружены!")
     if st.button("🚀 Сгенерировать отчет", type="primary"):
-        with st.spinner("⏳ Формирую отчет..."):
+        with st.spinner(" Формирую отчет..."):
             try:
                 df_main_raw = read_main_file_raw(file_main)
                 file_main.seek(0)
@@ -685,7 +682,7 @@ if file_main and file_combo:
                 wb.save(output)
                 output.seek(0)
                 st.success("✅ Отчет сформирован!")
-                st.download_button(label=" Скачать Итоговый_отчет.xlsx", data=output, file_name="Итоговый_отчет_Продукт.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                st.download_button(label="📥 Скачать Итоговый_отчет.xlsx", data=output, file_name="Итоговый_отчет_Продукт.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
             except Exception as e:
                 st.error(f"❌ Ошибка: {str(e)}")
 else:
