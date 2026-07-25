@@ -205,6 +205,7 @@ st.markdown(f"""
         margin: 10px 0;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         transition: transform 0.3s;
+        cursor: pointer;
     }}
     
     .report-card:hover {{
@@ -389,27 +390,28 @@ st.markdown(f"""
 
 col1, col2, col3 = st.columns(3)
 
+# Кликабельные карточки с переходом на соответствующие страницы
 with col1:
     st.markdown(f"""
-    <div class="report-card">
-        <h4 style="color: {sky_style['text_color']};">📅 КР месяц</h4>
-        <p style="color: {sky_style['text_color']};">Сводный отчёт за месяц с фильтрацией</p>
+    <div class="report-card" onclick="window.location.href='?page=KR%20month'">
+        <h4 style="color: {sky_style['text_color']}; cursor: pointer;">📅 КР месяц</h4>
+        <p style="color: {sky_style['text_color']}; cursor: pointer;">Сводный отчёт за месяц с фильтрацией</p>
     </div>
     """, unsafe_allow_html=True)
 
 with col2:
     st.markdown(f"""
-    <div class="report-card">
-        <h4 style="color: {sky_style['text_color']};">📆 КР неделя</h4>
-        <p style="color: {sky_style['text_color']};">Еженедельный сводный отчёт</p>
+    <div class="report-card" onclick="window.location.href='?page=KR%20week'">
+        <h4 style="color: {sky_style['text_color']}; cursor: pointer;">📆 КР неделя</h4>
+        <p style="color: {sky_style['text_color']}; cursor: pointer;">Еженедельный сводный отчёт</p>
     </div>
     """, unsafe_allow_html=True)
 
 with col3:
     st.markdown(f"""
-    <div class="report-card">
-        <h4 style="color: {sky_style['text_color']};">🍕 Продукт</h4>
-        <p style="color: {sky_style['text_color']};">Полный отчёт по продуктам</p>
+    <div class="report-card" onclick="window.location.href='?page=prodykt'">
+        <h4 style="color: {sky_style['text_color']}; cursor: pointer;">🍕 Продукт</h4>
+        <p style="color: {sky_style['text_color']}; cursor: pointer;">Полный отчёт по продуктам</p>
     </div>
     """, unsafe_allow_html=True)
 
