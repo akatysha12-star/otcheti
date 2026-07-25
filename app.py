@@ -3,7 +3,27 @@ import json
 from datetime import datetime
 import os
 import base64
+# ДИАГНОСТИКА
+st.write(" Диагностика:")
+st.write(f" Путь к app.py: {os.path.dirname(__file__)}")
+st.write(f"📅 Сегодня: {datetime.now().strftime('%d.%m.%Y')}")
+st.write(f"🔑 Ключ для поиска: {datetime.now().strftime('%m-%d')}")
 
+holidays_file = os.path.join(os.path.dirname(__file__), 'holidays.json')
+st.write(f" Путь к holidays.json: {holidays_file}")
+st.write(f"✅ Файл существует: {os.path.exists(holidays_file)}")
+
+if os.path.exists(holidays_file):
+    with open(holidays_file, 'r', encoding='utf-8') as f:
+        holidays = json.load(f)
+    st.write(f"📊 Всего праздников в файле: {len(holidays)}")
+    st.write(f"🔑 Первые 5 ключей: {list(holidays.keys())[:5]}")
+    
+    today_key = datetime.now().strftime('%m-%d')
+    st.write(f" Ищем ключ '{today_key}': {'✅ Найден!' if today_key in holidays else ' Не найден!'}")
+    
+    if today_key in holidays:
+        st.write(f" Праздник: {holidays[today_key]}")
 st.set_page_config(
     page_title="Система отчетов КР", 
     layout="wide",
