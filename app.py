@@ -36,76 +36,76 @@ def get_sky_css():
     
     styles = {
         "night": {
-            "header_bg": "linear-gradient(90deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+            "header_bg": "linear-gradient(90deg, #1e3a5f 0%, #2d5a87 100%)",
             "body_bg": "linear-gradient(180deg, #0f3460 0%, #1a1a2e 40%, #16213e 100%)",
             "cloud_color": "rgba(255,255,255,0.1)",
             "celestial": "🌙",
-            "celestial_pos": "top: 10%; right: 10%;",
+            "celestial_pos": "top: 8%; right: 5%;",
             "text_color": "#e0e0e0",
             "card_bg": "rgba(30, 30, 60, 0.85)",
             "info_border": "#4a5568",
-            "sidebar_bg": "linear-gradient(180deg, #1a1a2e 0%, #16213e 100%)",
-            "sidebar_text": "#ffffff"
+            "sidebar_bg": "linear-gradient(180deg, #2d5a87 0%, #1e3a5f 100%)",
+            "sidebar_text": "#b8d4e8"
         },
         "dawn": {
-            "header_bg": "linear-gradient(90deg, #ff6b6b 0%, #feca57 50%, #ff9ff3 100%)",
+            "header_bg": "linear-gradient(90deg, #ff9a76 0%, #ffcf48 100%)",
             "body_bg": "linear-gradient(180deg, #ff9a9e 0%, #fad0c4 40%, #ffd1ff 100%)",
             "cloud_color": "rgba(255,200,200,0.6)",
             "celestial": "🌅",
-            "celestial_pos": "top: 15%; right: 15%;",
+            "celestial_pos": "top: 12%; right: 5%;",
             "text_color": "#2d3748",
             "card_bg": "rgba(255, 240, 245, 0.9)",
             "info_border": "#ff6b6b",
-            "sidebar_bg": "linear-gradient(180deg, #c0392b 0%, #e74c3c 100%)",
-            "sidebar_text": "#ffffff"
+            "sidebar_bg": "linear-gradient(180deg, #ffe4e1 0%, #ffd1dc 100%)",
+            "sidebar_text": "#8b4513"
         },
         "morning": {
-            "header_bg": "linear-gradient(90deg, #74b9ff 0%, #a29bfe 50%, #fd79a8 100%)",
-            "body_bg": "linear-gradient(180deg, #74b9ff 0%, #a8e6cf 40%, #dcedc1 100%)",
+            "header_bg": "linear-gradient(90deg, #87ceeb 0%, #98d8e8 100%)",
+            "body_bg": "linear-gradient(180deg, #87ceeb 0%, #b0e0e6 40%, #e0f6ff 100%)",
             "cloud_color": "rgba(255,255,255,0.7)",
             "celestial": "🌤️",
-            "celestial_pos": "top: 10%; right: 20%;",
+            "celestial_pos": "top: 8%; right: 5%;",
             "text_color": "#1a365d",
             "card_bg": "rgba(255, 255, 255, 0.9)",
             "info_border": "#74b9ff",
-            "sidebar_bg": "linear-gradient(180deg, #2c5282 0%, #3182ce 100%)",
-            "sidebar_text": "#ffffff"
+            "sidebar_bg": "linear-gradient(180deg, #e0f2fe 0%, #bae6fd 100%)",
+            "sidebar_text": "#1e3a5f"
         },
         "day": {
-            "header_bg": "linear-gradient(90deg, #2c5282 0%, #3182ce 100%)",
+            "header_bg": "linear-gradient(90deg, #87ceeb 0%, #b0e0e6 100%)",
             "body_bg": "linear-gradient(180deg, #87CEEB 0%, #B0E0E6 40%, #E0F6FF 100%)",
             "cloud_color": "rgba(255,255,255,0.8)",
             "celestial": "☀️",
-            "celestial_pos": "top: 5%; right: 10%;",
+            "celestial_pos": "top: 3%; right: 5%;",
             "text_color": "#1a365d",
             "card_bg": "rgba(255, 255, 255, 0.9)",
             "info_border": "#2c5282",
-            "sidebar_bg": "linear-gradient(180deg, #1e3a5f 0%, #2c5282 100%)",
-            "sidebar_text": "#ffffff"
+            "sidebar_bg": "linear-gradient(180deg, #e0f2fe 0%, #bae6fd 100%)",
+            "sidebar_text": "#1e3a5f"
         },
         "evening": {
-            "header_bg": "linear-gradient(90deg, #ff7e5f 0%, #feb47b 50%, #ff6b6b 100%)",
+            "header_bg": "linear-gradient(90deg, #ff9a76 0%, #ffcf48 100%)",
             "body_bg": "linear-gradient(180deg, #ff9a76 0%, #ffcf48 40%, #ff6b6b 100%)",
             "cloud_color": "rgba(255,220,180,0.7)",
-            "celestial": "",
-            "celestial_pos": "top: 20%; right: 15%;",
+            "celestial": "🌇",
+            "celestial_pos": "top: 15%; right: 5%;",
             "text_color": "#2d3748",
             "card_bg": "rgba(255, 245, 230, 0.9)",
             "info_border": "#ff7e5f",
-            "sidebar_bg": "linear-gradient(180deg, #c0392b 0%, #e74c3c 100%)",
-            "sidebar_text": "#ffffff"
+            "sidebar_bg": "linear-gradient(180deg, #ffe4e1 0%, #ffd1dc 100%)",
+            "sidebar_text": "#8b4513"
         },
         "dusk": {
-            "header_bg": "linear-gradient(90deg, #1a365d 0%, #2c5282 50%, #4a5568 100%)",
-            "body_bg": "linear-gradient(180deg, #2d3748 0%, #4a5568 40%, #1a202c 100%)",
+            "header_bg": "linear-gradient(90deg, #667eea 0%, #764ba2 100%)",
+            "body_bg": "linear-gradient(180deg, #667eea 0%, #764ba2 40%, #2d3561 100%)",
             "cloud_color": "rgba(200,180,255,0.5)",
-            "celestial": "",
-            "celestial_pos": "top: 15%; right: 10%;",
+            "celestial": "🌆",
+            "celestial_pos": "top: 10%; right: 5%;",
             "text_color": "#e0e0e0",
             "card_bg": "rgba(40, 40, 80, 0.85)",
-            "info_border": "#4a5568",
-            "sidebar_bg": "linear-gradient(180deg, #1a365d 0%, #2c5282 100%)",
-            "sidebar_text": "#ffffff"
+            "info_border": "#764ba2",
+            "sidebar_bg": "linear-gradient(180deg, #e6e6fa 0%, #d8bfd8 100%)",
+            "sidebar_text": "#4a4a6a"
         }
     }
     
@@ -155,18 +155,19 @@ st.markdown(f"""
         transition: background 1s ease;
     }}
     
-    /* Солнце/Луна */
+    /* Солнце/Луна - исправлено позиционирование */
     .celestial-body {{
         position: fixed;
         {sky_style['celestial_pos']}
         font-size: 3em;
-        z-index: 2;
+        z-index: 100;
         animation: float 6s ease-in-out infinite;
+        pointer-events: none;
     }}
     
     @keyframes float {{
         0%, 100% {{ transform: translateY(0px); }}
-        50% {{ transform: translateY(-20px); }}
+        50% {{ transform: translateY(-15px); }}
     }}
     
     /* Звёзды для ночи */
@@ -215,7 +216,7 @@ st.markdown(f"""
         box-shadow: 0 6px 20px rgba(0,0,0,0.15);
     }}
     
-    /* БОКОВАЯ ПАНЕЛЬ - тёмно-синяя с белым текстом */
+    /* БОКОВАЯ ПАНЕЛЬ - светлая с тёмным текстом */
     .stSidebar {{
         background: {sky_style['sidebar_bg']} !important;
     }}
@@ -224,18 +225,19 @@ st.markdown(f"""
         background: {sky_style['sidebar_bg']} !important;
     }}
     
-    /* Текст в боковой панели - белый */
+    /* Текст в боковой панели - тёмный */
     .stSidebar .stMarkdown,
     .stSidebar .stText,
     .stSidebar label,
     .stSidebar span,
     .stSidebar a {{
         color: {sky_style['sidebar_text']} !important;
+        font-weight: 500;
     }}
     
     /* Ссылки в боковой панели */
     .stSidebar a:hover {{
-        color: #ffd700 !important;
+        color: #ff6b6b !important;
     }}
     
     /* Кнопки */
@@ -343,7 +345,7 @@ def get_today_holiday():
             if today_key in holidays:
                 return holidays[today_key]
         
-        return " Хорошего дня!"
+        return "🌟 Хорошего дня!"
     except Exception as e:
         return "🌟 Отличного настроения!"
 
@@ -352,7 +354,6 @@ def get_today_holiday():
 def get_local_gif():
     """Загружает локальную GIF из папки assets/"""
     try:
-        # Проверяем разные возможные имена файла
         possible_names = ['animation.gif', 'animation.GIF', 'Animation.gif', 'my_gif.gif']
         
         for name in possible_names:
@@ -387,12 +388,12 @@ if time_of_day == "night":
     st.markdown(stars_html, unsafe_allow_html=True)
 
 # Заголовок
-st.title("📊 Система формирования отчётов")
+st.title(" Система формирования отчётов")
 
 # Приветствие
 st.markdown(f"""
 <div class="info-block">
-    <h3 style="color: {sky_style['text_color']}; margin-top: 0;">👋 Доброго прекрасного денёчка!</h3>
+    <h3 style="color: {sky_style['text_color']}; margin-top: 0;"> Доброго прекрасного денёчка!</h3>
     <p style="font-size: 1.1em; color: {sky_style['text_color']};">
         Здесь вы можете формировать отчёты в один клик.<br>
         👈 <b>Выберите нужный отчёт в боковом меню слева.</b>
@@ -420,7 +421,7 @@ with col1:
 with col2:
     st.markdown(f"""
     <div class="report-card">
-        <h4 style="color: {sky_style['text_color']};">📆 КР неделя</h4>
+        <h4 style="color: {sky_style['text_color']};"> КР неделя</h4>
         <p style="color: {sky_style['text_color']};">Еженедельный сводный отчёт</p>
     </div>
     """, unsafe_allow_html=True)
@@ -441,7 +442,7 @@ gif_data = get_local_gif()
 if "День" in holiday_message:
     congratulation = f"🎉 Поздравляю с {holiday_message}! 🎊"
 else:
-    congratulation = f"🎉 {holiday_message} 🎊"
+    congratulation = f" {holiday_message} 🎊"
 
 if gif_data:
     st.markdown(f"""
@@ -455,7 +456,6 @@ if gif_data:
     </div>
     """, unsafe_allow_html=True)
 else:
-    # Если GIF не найдена, показываем только праздник и предупреждение
     st.markdown(f"""
     <div class="holiday-banner" style="max-width: 600px; margin: 30px auto;">
         {congratulation}
@@ -466,7 +466,7 @@ else:
 
 # Индикатор времени суток
 time_names = {
-    "night": " Ночь",
+    "night": "🌙 Ночь",
     "dawn": "🌅 Рассвет",
     "morning": "🌤️ Утро",
     "day": "☀️ День",
