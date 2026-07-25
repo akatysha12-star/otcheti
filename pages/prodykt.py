@@ -16,11 +16,8 @@ st.title("🍕 Отчет Продукт")
 # ==================== НАСТРОЙКИ ====================
 
 CATEGORY_COLORS = {
-    'пиццы': 'FFFFE0',
-    'закуски': 'F0FFF0',
-    'напитки': 'F0F8FF',
-    'десерты': 'FFE4E1',
-    'комбо и радости': 'FFFFFF'
+    'пиццы': 'FFFFE0', 'закуски': 'F0FFF0', 'напитки': 'F0F8FF',
+    'десерты': 'FFE4E1', 'комбо и радости': 'FFFFFF'
 }
 
 CATEGORY_MAPPING = {
@@ -42,7 +39,7 @@ CITY_COLUMNS = {'СПБ': {'start': 1, 'end': 7}, 'Тюмень': {'start': 9, '
 
 PIZZA_CATEGORY_MAPPING = {
     7: ["большая бонанза", "итальянская с моцареллой и пепперони", "8 сыров", "любимая папина пицца"],
-    6: ["баварская", "супер папа", "мясная", "маленькая италия", "чеддер и бекон", "4 сыра"],
+    6: ["баварская", "супер папа", "мясная", "маленькая италия", "чеддер и бекон", "с чеддером и беконом", "4 сыра", "четыре сыра"],
     5: ["альфредо", "цыпленок рэнч", "папа микс", "цыпленок барбекю", "мясное барбекю", "мексиканская"],
     4: ["цыплёнок флорентина", "гавайская", "двойная пепперони"],
     3: ["пепперони", "ветчина и грибы", "вегетарианская", "маргарита"],
@@ -52,7 +49,7 @@ PIZZA_CATEGORY_MAPPING = {
 }
 PIZZA_CATEGORY_ORDER = [7, 6, 5, 4, 3, 2, 1, 'Сезонные']
 
-# ==================== ФУНКЦИИ ПАРСИНГА ====================
+# ==================== ФУНКЦИИ ====================
 
 def clean_dish_name(name):
     if not isinstance(name, str): return ""
@@ -87,6 +84,7 @@ def normalize_text(text):
 def find_category(pizza_name):
     normalized_pizza = normalize_text(pizza_name)
     if 'промо' in normalized_pizza: normalized_pizza = normalized_pizza.replace('промо', '').strip()
+    if normalized_pizza == "с чеддером и беконом": return 6
     for cat_num in PIZZA_CATEGORY_ORDER:
         if cat_num == 'Сезонные': continue
         for name in PIZZA_CATEGORY_MAPPING[cat_num]:
@@ -104,14 +102,14 @@ def extract_size(category):
     return None
 
 def read_main_file_raw(uploaded_file):
-    """Читает основной файл и возвращает СЫРОЙ DataFrame (без groupby)."""
+    """Читает основной файл и возвращает СЫРОЙ DataFrame."""
     df = pd.read_excel(uploaded_file, header=None)
     header_row = None
     for idx, row in df.iterrows():
         vals = [str(v) for v in row.values if pd.notna(v)]
         if 'Юридическое лицо' in ' '.join(vals) and 'Блюдо' in ' '.join(vals):
             header_row = idx; break
-    if header_row is None: raise ValueError("Не найдена строка заголовков!")
+    if header_row is None: raise ValueError("Не найдена строка заголовков в основном файле!")
     headers = df.iloc[header_row].values
     df = df[header_row + 1:].copy()
     df.columns = headers
@@ -142,13 +140,14 @@ def parse_main_file(uploaded_file):
     }).reset_index()
 
 def parse_combo_file(uploaded_file):
+    """Парсит файл комбо. Возвращает сгруппированный DataFrame."""
     df = pd.read_excel(uploaded_file, header=None)
     header_row = None
     for idx, row in df.iterrows():
         vals = [str(v) for v in row.values if pd.notna(v)]
         if 'Юридическое лицо' in ' '.join(vals) and 'Комбо' in ' '.join(vals):
             header_row = idx; break
-    if header_row is None: raise ValueError("Не найдена строка заголовков!")
+    if header_row is None: raise ValueError("Не найдена строка заголовков в файле комбо!")
     headers = df.iloc[header_row].values
     df = df[header_row + 1:].copy()
     df.columns = headers
@@ -158,12 +157,19 @@ def parse_combo_file(uploaded_file):
     df = df[~df['Юридическое лицо'].astype(str).str.contains('всего|Итого', na=False)]
     df = df[~df['Название Комбо'].astype(str).str.lower().str.contains('персонал', na=False)]
     df = df[df['Название Комбо'].notna()]
+    df = df[df['Название Комбо'].astype(str).str.strip() != '']
     df['Количество Комбо'] = pd.to_numeric(df['Количество Комбо'], errors='coerce').fillna(0)
     df['Сумма со скидкой, р.'] = pd.to_numeric(df['Сумма со скидкой, р.'], errors='coerce').fillna(0)
     df['Чеков'] = pd.to_numeric(df['Чеков'], errors='coerce').fillna(0)
-    df = df.rename(columns={'Название Комбо': 'Блюдо_очищенное', 'Количество Комбо': 'Количество блюд'})
+    
+    # ✅ Переименовываем в 'Блюдо_очищенное' (единое имя для всех листов)
+    df = df.rename(columns={
+        'Название Комбо': 'Блюдо_очищенное',
+        'Количество Комбо': 'Количество блюд'
+    })
     df['Блюдо_очищенное'] = df['Блюдо_очищенное'].apply(clean_dish_name)
     df['Категория_отчёт'] = 'комбо и радости'
+    
     return df.groupby(['Юридическое лицо', 'Категория_отчёт', 'Блюдо_очищенное']).agg({
         'Количество блюд': 'sum', 'Сумма со скидкой, р.': 'sum', 'Чеков': 'sum'
     }).reset_index()
@@ -244,22 +250,24 @@ def create_rating_sheet(wb, all_data):
             cell.font = Font(bold=True, size=11)
             cell.border = thin_border
 
-def create_pizza_sheet(wb, df_main):
+def create_pizza_sheet(wb, df_main_raw):
     ws = wb.create_sheet("Пиццы")
     border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
-    spb_data = df_main[df_main['Юридическое лицо'].astype(str).str.contains('СПБ', na=False)].copy()
-    tyumen_data = df_main[df_main['Юридическое лицо'].astype(str).str.contains('ООО "ПД"', na=False) & ~df_main['Юридическое лицо'].astype(str).str.contains('СПБ', na=False)].copy()
+    spb_data = df_main_raw[df_main_raw['Юридическое лицо'].astype(str).str.contains('СПБ', na=False)].copy()
+    tyumen_data = df_main_raw[df_main_raw['Юридическое лицо'].astype(str).str.contains('ООО "ПД"', na=False) & ~df_main_raw['Юридическое лицо'].astype(str).str.contains('СПБ', na=False)].copy()
+    
     def aggregate_data(df):
         result = {}
         for _, row in df.iterrows():
             size = extract_size(str(row['Категория блюда']))
             if size is None: continue
-            normalized_name = normalize_text(str(row['Блюдо_очищенное'])).title()
-            cat_num = find_category(str(row['Блюдо_очищенное']))
+            normalized_name = normalize_text(str(row['Блюдо'])).title()
+            cat_num = find_category(str(row['Блюдо']))
             key = (cat_num, normalized_name)
             if key not in result: result[key] = {15: 0, 23: 0, 30: 0, 35: 0, 40: 0}
             result[key][size] += int(float(row['Количество блюд']))
         return result
+    
     def create_table(df_data, title, start_col, start_row):
         result = aggregate_data(df_data)
         sorted_data = []
@@ -318,6 +326,7 @@ def create_pizza_sheet(wb, df_main):
             cell = ws.cell(row=total_row, column=col, value=f"=SUM({cl}{data_start}:{cl}{data_end})")
             cell.font = Font(bold=True, size=11)
             cell.border = border
+    
     create_table(spb_data, "СПБ", 1, 1)
     create_table(tyumen_data, "Тюмень", 11, 1)
 
@@ -329,9 +338,9 @@ def create_combo_sheet(wb, df_combo):
     df_combo = df_combo[df_combo['Город'].notna()]
     df_combo = df_combo[~df_combo['Блюдо_очищенное'].str.lower().str.contains('мастер', na=False)]
     grouped = df_combo.groupby(['Город', 'Блюдо_очищенное']).agg({
-        'Количество блюд': 'sum',
-        'Сумма со скидкой, р.': 'sum'
+        'Количество блюд': 'sum', 'Сумма со скидкой, р.': 'sum'
     }).reset_index()
+    
     ws.cell(1, 1, 'СПБ').font = Font(bold=True, size=12)
     ws.cell(1, 6, 'Тюмень').font = Font(bold=True, size=12)
     headers = ['Блюдо', 'Количество блюд', 'Сумма со скидкой, р.', '% от числа всех комбо']
@@ -341,6 +350,7 @@ def create_combo_sheet(wb, df_combo):
             cell.font = Font(bold=True, size=10)
             cell.border = thin_border
             cell.alignment = Alignment(horizontal='center', vertical='center')
+    
     city_data_1 = {}
     for city in ['СПБ', 'Тюмень']:
         city_df = grouped[grouped['Город'] == city].copy()
@@ -348,8 +358,10 @@ def create_combo_sheet(wb, df_combo):
         city_df['%_qty'] = city_df['Количество блюд'] / total_qty if total_qty > 0 else 0
         city_df = city_df.sort_values('%_qty', ascending=False).reset_index(drop=True)
         city_data_1[city] = city_df
+    
     max_items_1 = max(len(city_data_1['СПБ']), len(city_data_1['Тюмень'])) if len(city_data_1['СПБ']) > 0 or len(city_data_1['Тюмень']) > 0 else 0
-    total_row_1 = 3 + max_items_1
+    total_row_1 = 3 + max_items_1 + 2
+    
     for idx in range(max_items_1):
         row = 3 + idx
         for city, start_col in [('СПБ', 1), ('Тюмень', 6)]:
@@ -362,18 +374,20 @@ def create_combo_sheet(wb, df_combo):
                 c = ws.cell(row, start_col + 3, formula)
                 c.border = thin_border
                 c.number_format = '0.00%'
+    
     for city, start_col in [('СПБ', 1), ('Тюмень', 6)]:
         col_b, col_c, col_d = start_col + 1, start_col + 2, start_col + 3
         total_cell = ws.cell(total_row_1, start_col, 'Итого' if city == 'СПБ' else 'Итого:')
         total_cell.font = Font(bold=True)
         total_cell.border = thin_border
-        ws.cell(total_row_1, col_b, f"=SUM({get_column_letter(col_b)}3:{get_column_letter(col_b)}{total_row_1-1})").font = Font(bold=True)
+        ws.cell(total_row_1, col_b, f"=SUM({get_column_letter(col_b)}3:{get_column_letter(col_b)}{total_row_1-3})").font = Font(bold=True)
         ws.cell(total_row_1, col_b).border = thin_border
         ws.cell(total_row_1, col_c).border = thin_border
-        c = ws.cell(total_row_1, col_d, f"=SUM({get_column_letter(col_d)}3:{get_column_letter(col_d)}{total_row_1-1})")
+        c = ws.cell(total_row_1, col_d, f"=SUM({get_column_letter(col_d)}3:{get_column_letter(col_d)}{total_row_1-3})")
         c.font = Font(bold=True)
         c.border = thin_border
         c.number_format = '0.00%'
+    
     start_row_2 = total_row_1 + 3
     ws.cell(start_row_2, 1, 'СПБ').font = Font(bold=True, size=12)
     ws.cell(start_row_2, 6, 'Тюмень').font = Font(bold=True, size=12)
@@ -384,6 +398,7 @@ def create_combo_sheet(wb, df_combo):
             cell.font = Font(bold=True, size=10)
             cell.border = thin_border
             cell.alignment = Alignment(horizontal='center', vertical='center')
+    
     city_data_2 = {}
     for city in ['СПБ', 'Тюмень']:
         city_df = grouped[grouped['Город'] == city].copy()
@@ -391,9 +406,11 @@ def create_combo_sheet(wb, df_combo):
         city_df['%_sum'] = city_df['Сумма со скидкой, р.'] / total_sum if total_sum > 0 else 0
         city_df = city_df.sort_values('%_sum', ascending=False).reset_index(drop=True)
         city_data_2[city] = city_df
+    
     max_items_2 = max(len(city_data_2['СПБ']), len(city_data_2['Тюмень'])) if len(city_data_2['СПБ']) > 0 or len(city_data_2['Тюмень']) > 0 else 0
     data_start_2 = start_row_2 + 2
-    total_row_2 = data_start_2 + max_items_2
+    total_row_2 = data_start_2 + max_items_2 + 2
+    
     for idx in range(max_items_2):
         row = data_start_2 + idx
         for city, start_col in [('СПБ', 1), ('Тюмень', 6)]:
@@ -406,21 +423,21 @@ def create_combo_sheet(wb, df_combo):
                 c = ws.cell(row, start_col + 3, formula)
                 c.border = thin_border
                 c.number_format = '0.00%'
+    
     for city, start_col in [('СПБ', 1), ('Тюмень', 6)]:
         col_b, col_c, col_d = start_col + 1, start_col + 2, start_col + 3
         total_cell = ws.cell(total_row_2, start_col, 'Итого' if city == 'СПБ' else 'Итого:')
         total_cell.font = Font(bold=True)
         total_cell.border = thin_border
         ws.cell(total_row_2, col_b).border = thin_border
-        ws.cell(total_row_2, col_c, f"=SUM({get_column_letter(col_c)}{data_start_2}:{get_column_letter(col_c)}{total_row_2-1})").font = Font(bold=True)
+        ws.cell(total_row_2, col_c, f"=SUM({get_column_letter(col_c)}{data_start_2}:{get_column_letter(col_c)}{total_row_2-3})").font = Font(bold=True)
         ws.cell(total_row_2, col_c).border = thin_border
-        c = ws.cell(total_row_2, col_d, f"=SUM({get_column_letter(col_d)}{data_start_2}:{get_column_letter(col_d)}{total_row_2-1})")
+        c = ws.cell(total_row_2, col_d, f"=SUM({get_column_letter(col_d)}{data_start_2}:{get_column_letter(col_d)}{total_row_2-3})")
         c.font = Font(bold=True)
         c.border = thin_border
         c.number_format = '0.00%'
 
 def classify_for_share(row):
-    """Классифицирует сырую строку в одну из 7 категорий."""
     cat = str(row['Категория блюда']).strip().lower()
     name = str(row['Блюдо']).strip().lower()
     if 'тесто' in cat and 'половинки' not in cat: return 'Пиццы'
@@ -439,19 +456,16 @@ def classify_for_share(row):
     return None
 
 def create_category_share_sheet(wb, df_main_raw, df_combo):
-    """Использует СЫРОЙ основной файл."""
     ws = wb.create_sheet("Доля категорий")
     thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
     CATEGORIES_SHARE = ['Десерты', 'Закуски', 'Напитки', 'Пиццы', 'Пиццы половинки', 'Сеты', 'Соусы']
     
-    # Обрабатываем сырой основной файл
     df_main_share = df_main_raw.copy()
     df_main_share['Город'] = df_main_share['Юридическое лицо'].apply(map_city)
     df_main_share = df_main_share[df_main_share['Город'].notna()]
     df_main_share['Категория_доля'] = df_main_share.apply(classify_for_share, axis=1)
     df_main_share = df_main_share[df_main_share['Категория_доля'].notna()]
     
-    # Обрабатываем комбо
     df_combo_share = df_combo.copy()
     df_combo_share['Город'] = df_combo_share['Юридическое лицо'].apply(map_city)
     df_combo_share = df_combo_share[df_combo_share['Город'].notna()]
@@ -553,7 +567,6 @@ def create_category_share_sheet(wb, df_main_raw, df_combo):
         c.number_format = '0.00%'
 
 def create_category_dynamics_sheet(wb, df_main_raw, df_combo):
-    """Использует СЫРОЙ основной файл."""
     ws = wb.create_sheet("Доля категорий динамика")
     thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
     CATEGORIES_DYN = ['Десерты', 'Закуски', 'Напитки', 'Пиццы', 'Пиццы половинки', 'Сеты', 'Соусы']
@@ -636,13 +649,15 @@ def create_category_dynamics_sheet(wb, df_main_raw, df_combo):
 
 st.markdown("""
 Загрузите два файла для формирования отчета:
-1. **Основной файл** (рейтинг_продукт ... .xlsx)
-2. **Файл комбо** (рейтинг_продукт ... к.xlsx)
+1. **Основной файл** (OLAP-отчет с пиццами, закусками и т.д.)
+2. **Файл комбо** (OLAP-отчет с комбо-наборами)
+
+💡 *Названия файлов могут быть любыми — важна только структура данных внутри.*
 """)
 
 col1, col2 = st.columns(2)
 with col1:
-    file_main = st.file_uploader("📁 Основной файл", type=['xlsx'])
+    file_main = st.file_uploader(" Основной файл", type=['xlsx'])
 with col2:
     file_combo = st.file_uploader("📁 Файл комбо", type=['xlsx'])
 
@@ -651,13 +666,8 @@ if file_main and file_combo:
     if st.button("🚀 Сгенерировать отчет", type="primary"):
         with st.spinner("⏳ Формирую отчет..."):
             try:
-                # Читаем сырые данные для Доли категорий
                 df_main_raw = read_main_file_raw(file_main)
-                
-                # Сбрасываем позицию файла для повторного чтения
                 file_main.seek(0)
-                
-                # Сгруппированные данные для Рейтинга и Пицц
                 df_main = parse_main_file(file_main)
                 df_combo = parse_combo_file(file_combo)
                 all_data = pd.concat([df_main, df_combo], ignore_index=True)
@@ -666,7 +676,7 @@ if file_main and file_combo:
                 if 'Sheet' in wb.sheetnames: del wb['Sheet']
                 
                 create_rating_sheet(wb, all_data)
-                create_pizza_sheet(wb, df_main_raw)  # Для пицц нужны сырые данные (Категория блюда)
+                create_pizza_sheet(wb, df_main_raw)
                 create_combo_sheet(wb, df_combo)
                 create_category_share_sheet(wb, df_main_raw, df_combo)
                 create_category_dynamics_sheet(wb, df_main_raw, df_combo)
@@ -677,6 +687,6 @@ if file_main and file_combo:
                 st.success("✅ Отчет сформирован!")
                 st.download_button(label=" Скачать Итоговый_отчет.xlsx", data=output, file_name="Итоговый_отчет_Продукт.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
             except Exception as e:
-                st.error(f" Ошибка: {str(e)}")
+                st.error(f"❌ Ошибка: {str(e)}")
 else:
     st.info("👆 Загрузите оба файла для начала работы")
