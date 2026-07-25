@@ -351,6 +351,20 @@ def get_today_holiday():
         return "🌟 Отличного настроения!"
 
 def get_local_gif():
+    def get_greeting():
+    """Возвращает приветствие в зависимости от времени суток."""
+
+    greetings = {
+        "morning": "🌤 Доброго утречка!",
+        "day": "☀ Доброго денёчка!",
+        "evening": "🌙 Не засидись допоздна 😊",
+        "dusk": "🌙 Не засидись допоздна 😊",
+        "night": "👀 Пупупум... а кто это тут не спит?",
+        "dawn": "🌤 Доброго утречка!"
+    }
+
+    return greetings.get(time_of_day, "👋 Добро пожаловать!") 
+    
     """Загружает GIF из папки assets."""
 
     possible_names = [
@@ -413,7 +427,9 @@ if time_of_day == "night":
 # Приветствие
 st.markdown(f"""
 <div class="info-block">
-    <h3 style="color: {sky_style['text_color']}; margin-top: 0;"> Доброго прекрасного денёчка!</h3>
+   <h3 style="color: {sky_style['text_color']}; margin-top: 0;">
+    {get_greeting()}
+</h3>
     <p style="font-size: 1.1em; color: {sky_style['text_color']};">
         Здесь вы можете формировать отчёты в один клик.<br>
         👈 <b>Выберите нужный отчёт в боковом меню слева.</b>
