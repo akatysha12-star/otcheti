@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 import os
 import base64
-
+streamlit --version
 st.set_page_config(
     page_title="Система отчетов КР", 
     layout="wide",
