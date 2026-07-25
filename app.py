@@ -3,27 +3,7 @@ import json
 from datetime import datetime
 import os
 import base64
-# ДИАГНОСТИКА
-st.write(" Диагностика:")
-st.write(f" Путь к app.py: {os.path.dirname(__file__)}")
-st.write(f"📅 Сегодня: {datetime.now().strftime('%d.%m.%Y')}")
-st.write(f"🔑 Ключ для поиска: {datetime.now().strftime('%m-%d')}")
 
-holidays_file = os.path.join(os.path.dirname(__file__), 'holidays.json')
-st.write(f" Путь к holidays.json: {holidays_file}")
-st.write(f"✅ Файл существует: {os.path.exists(holidays_file)}")
-
-if os.path.exists(holidays_file):
-    with open(holidays_file, 'r', encoding='utf-8') as f:
-        holidays = json.load(f)
-    st.write(f"📊 Всего праздников в файле: {len(holidays)}")
-    st.write(f"🔑 Первые 5 ключей: {list(holidays.keys())[:5]}")
-    
-    today_key = datetime.now().strftime('%m-%d')
-    st.write(f" Ищем ключ '{today_key}': {'✅ Найден!' if today_key in holidays else ' Не найден!'}")
-    
-    if today_key in holidays:
-        st.write(f" Праздник: {holidays[today_key]}")
 st.set_page_config(
     page_title="Система отчетов КР", 
     layout="wide",
@@ -33,7 +13,6 @@ st.set_page_config(
 # ==================== ОПРЕДЕЛЕНИЕ ВРЕМЕНИ СУТОК ====================
 
 def get_time_of_day():
-    """Определяет время суток"""
     hour = datetime.now().hour
     if 0 <= hour < 5:
         return "night"
@@ -51,7 +30,6 @@ def get_time_of_day():
         return "night"
 
 def get_sky_css():
-    """Возвращает CSS в зависимости от времени суток"""
     time_of_day = get_time_of_day()
     
     styles = {
@@ -60,7 +38,6 @@ def get_sky_css():
             "body_bg": "linear-gradient(180deg, #0f3460 0%, #1a1a2e 40%, #16213e 100%)",
             "cloud_color": "rgba(255,255,255,0.1)",
             "celestial": "🌙",
-            "celestial_pos": "top: 8%; right: 5%;",
             "text_color": "#e0e0e0",
             "card_bg": "rgba(30, 30, 60, 0.85)",
             "info_border": "#4a5568",
@@ -72,7 +49,6 @@ def get_sky_css():
             "body_bg": "linear-gradient(180deg, #ff9a9e 0%, #fad0c4 40%, #ffd1ff 100%)",
             "cloud_color": "rgba(255,200,200,0.6)",
             "celestial": "🌅",
-            "celestial_pos": "top: 12%; right: 5%;",
             "text_color": "#2d3748",
             "card_bg": "rgba(255, 240, 245, 0.9)",
             "info_border": "#ff6b6b",
@@ -84,7 +60,6 @@ def get_sky_css():
             "body_bg": "linear-gradient(180deg, #87ceeb 0%, #b0e0e6 40%, #e0f6ff 100%)",
             "cloud_color": "rgba(255,255,255,0.7)",
             "celestial": "🌤️",
-            "celestial_pos": "top: 8%; right: 5%;",
             "text_color": "#1a365d",
             "card_bg": "rgba(255, 255, 255, 0.9)",
             "info_border": "#74b9ff",
@@ -96,7 +71,6 @@ def get_sky_css():
             "body_bg": "linear-gradient(180deg, #87CEEB 0%, #B0E0E6 40%, #E0F6FF 100%)",
             "cloud_color": "rgba(255,255,255,0.8)",
             "celestial": "☀️",
-            "celestial_pos": "top: 3%; right: 5%;",
             "text_color": "#1a365d",
             "card_bg": "rgba(255, 255, 255, 0.9)",
             "info_border": "#2c5282",
@@ -108,7 +82,6 @@ def get_sky_css():
             "body_bg": "linear-gradient(180deg, #ff9a76 0%, #ffcf48 40%, #ff6b6b 100%)",
             "cloud_color": "rgba(255,220,180,0.7)",
             "celestial": "🌇",
-            "celestial_pos": "top: 15%; right: 5%;",
             "text_color": "#2d3748",
             "card_bg": "rgba(255, 245, 230, 0.9)",
             "info_border": "#ff7e5f",
@@ -120,7 +93,6 @@ def get_sky_css():
             "body_bg": "linear-gradient(180deg, #667eea 0%, #764ba2 40%, #2d3561 100%)",
             "cloud_color": "rgba(200,180,255,0.5)",
             "celestial": "🌆",
-            "celestial_pos": "top: 10%; right: 5%;",
             "text_color": "#e0e0e0",
             "card_bg": "rgba(40, 40, 80, 0.85)",
             "info_border": "#764ba2",
@@ -131,21 +103,18 @@ def get_sky_css():
     
     return styles[time_of_day], time_of_day
 
-# Получаем стили
 sky_style, time_of_day = get_sky_css()
 
 # ==================== CSS СТИЛИ ====================
 
 st.markdown(f"""
 <style>
-    /* Основной фон */
     .stApp {{
         background: {sky_style['body_bg']};
         min-height: 100vh;
         transition: background 1s ease;
     }}
     
-    /* Облака */
     .stApp::before {{
         content: '';
         position: fixed;
@@ -168,29 +137,21 @@ st.markdown(f"""
         z-index: 1;
     }}
     
-    /* ВЕРХНЯЯ ПОЛОСКА */
     .stApp header {{
         background: {sky_style['header_bg']} !important;
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        transition: background 1s ease;
     }}
     
-    /* Солнце/Луна - исправлено позиционирование */
+    /* СОЛНЦЕ - позиционируем абсолютно, не fixed */
     .celestial-body {{
-        position: fixed;
-        {sky_style['celestial_pos']}
+        position: absolute;
+        top: 20px;
+        right: 50px;
         font-size: 3em;
         z-index: 100;
-        animation: float 6s ease-in-out infinite;
         pointer-events: none;
     }}
     
-    @keyframes float {{
-        0%, 100% {{ transform: translateY(0px); }}
-        50% {{ transform: translateY(-15px); }}
-    }}
-    
-    /* Звёзды для ночи */
     .stars {{
         position: fixed;
         top: 0;
@@ -213,7 +174,6 @@ st.markdown(f"""
         50% {{ opacity: 1; }}
     }}
     
-    /* Заголовок */
     h1 {{
         color: {sky_style['text_color']};
         text-shadow: 2px 2px 4px rgba(255,255,255,0.3);
@@ -221,7 +181,6 @@ st.markdown(f"""
         font-weight: bold;
     }}
     
-    /* Карточки */
     .report-card {{
         background: {sky_style['card_bg']};
         border-radius: 15px;
@@ -236,7 +195,6 @@ st.markdown(f"""
         box-shadow: 0 6px 20px rgba(0,0,0,0.15);
     }}
     
-    /* БОКОВАЯ ПАНЕЛЬ - светлая с тёмным текстом */
     .stSidebar {{
         background: {sky_style['sidebar_bg']} !important;
     }}
@@ -245,7 +203,6 @@ st.markdown(f"""
         background: {sky_style['sidebar_bg']} !important;
     }}
     
-    /* Текст в боковой панели - тёмный */
     .stSidebar .stMarkdown,
     .stSidebar .stText,
     .stSidebar label,
@@ -255,12 +212,10 @@ st.markdown(f"""
         font-weight: 500;
     }}
     
-    /* Ссылки в боковой панели */
     .stSidebar a:hover {{
         color: #ff6b6b !important;
     }}
     
-    /* Кнопки */
     .stButton > button {{
         background: {sky_style['header_bg']};
         color: white;
@@ -277,7 +232,6 @@ st.markdown(f"""
         box-shadow: 0 6px 20px rgba(0,0,0,0.3);
     }}
     
-    /* Праздничная секция с GIF */
     .holiday-section {{
         display: flex;
         align-items: center;
@@ -311,7 +265,6 @@ st.markdown(f"""
         50% {{ opacity: 0.8; }}
     }}
     
-    /* GIF контейнер */
     .gif-container {{
         text-align: center;
         flex: 0 0 auto;
@@ -324,7 +277,6 @@ st.markdown(f"""
         border: 3px solid gold;
     }}
     
-    /* Блоки информации */
     .info-block {{
         background: {sky_style['card_bg']};
         padding: 20px;
@@ -333,7 +285,6 @@ st.markdown(f"""
         border-left: 5px solid {sky_style['info_border']};
     }}
     
-    /* Время суток индикатор */
     .time-indicator {{
         position: fixed;
         bottom: 20px;
@@ -348,34 +299,25 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-# ==================== ФУНКЦИЯ ДЛЯ ПРАЗДНИКОВ ====================
+# ==================== ФУНКЦИИ ====================
 
 def get_today_holiday():
-    """Получает праздник на сегодня из JSON файла"""
     try:
         holidays_file = os.path.join(os.path.dirname(__file__), 'holidays.json')
-        
         if os.path.exists(holidays_file):
             with open(holidays_file, 'r', encoding='utf-8') as f:
                 holidays = json.load(f)
-            
             today = datetime.now()
             today_key = f"{today.month:02d}-{today.day:02d}"
-            
             if today_key in holidays:
                 return holidays[today_key]
-        
         return "🌟 Хорошего дня!"
     except Exception as e:
-        return "🌟 Отличного настроения!"
-
-# ==================== ФУНКЦИЯ ДЛЯ ЗАГРУЗКИ GIF ====================
+        return " Отличного настроения!"
 
 def get_local_gif():
-    """Загружает локальную GIF из папки assets/"""
     try:
         possible_names = ['animation.gif', 'animation.GIF', 'Animation.gif', 'my_gif.gif']
-        
         for name in possible_names:
             gif_path = os.path.join(os.path.dirname(__file__), 'assets', name)
             if os.path.exists(gif_path):
@@ -383,18 +325,14 @@ def get_local_gif():
                     gif_bytes = f.read()
                     gif_base64 = base64.b64encode(gif_bytes).decode()
                     return f"data:image/gif;base64,{gif_base64}"
-        
         return None
     except Exception as e:
-        st.warning(f"⚠️ Ошибка загрузки GIF: {e}")
         return None
 
 # ==================== ГЛАВНАЯ СТРАНИЦА ====================
 
-# Солнце/Луна
 st.markdown(f'<div class="celestial-body">{sky_style["celestial"]}</div>', unsafe_allow_html=True)
 
-# Звёзды для ночи
 if time_of_day == "night":
     stars_html = '<div class="stars">'
     import random
@@ -407,13 +345,11 @@ if time_of_day == "night":
     stars_html += '</div>'
     st.markdown(stars_html, unsafe_allow_html=True)
 
-# Заголовок
-st.title(" Система формирования отчётов")
+st.title("📊 Система формирования отчётов")
 
-# Приветствие
 st.markdown(f"""
 <div class="info-block">
-    <h3 style="color: {sky_style['text_color']}; margin-top: 0;"> Доброго прекрасного денёчка!</h3>
+    <h3 style="color: {sky_style['text_color']}; margin-top: 0;">👋 Доброго прекрасного денёчка!</h3>
     <p style="font-size: 1.1em; color: {sky_style['text_color']};">
         Здесь вы можете формировать отчёты в один клик.<br>
         👈 <b>Выберите нужный отчёт в боковом меню слева.</b>
@@ -421,10 +357,9 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# Доступные отчёты
 st.markdown(f"""
 <div class="report-card">
-    <h3 style="color: {sky_style['text_color']}; margin-top: 0;">📋 Доступные отчёты:</h3>
+    <h3 style="color: {sky_style['text_color']}; margin-top: 0;"> Доступные отчёты:</h3>
 </div>
 """, unsafe_allow_html=True)
 
@@ -441,7 +376,7 @@ with col1:
 with col2:
     st.markdown(f"""
     <div class="report-card">
-        <h4 style="color: {sky_style['text_color']};"> КР неделя</h4>
+        <h4 style="color: {sky_style['text_color']};">📆 КР неделя</h4>
         <p style="color: {sky_style['text_color']};">Еженедельный сводный отчёт</p>
     </div>
     """, unsafe_allow_html=True)
@@ -449,20 +384,18 @@ with col2:
 with col3:
     st.markdown(f"""
     <div class="report-card">
-        <h4 style="color: {sky_style['text_color']};">🍕 Продукт</h4>
-        <p style="color: {sky_style['text_color']};">Полный отчёт по продуктам (5 листов)</p>
+        <h4 style="color: {sky_style['text_color']};"> Продукт</h4>
+        <p style="color: {sky_style['text_color']};">Полный отчёт по продуктам </p>
     </div>
     """, unsafe_allow_html=True)
 
-# Праздник и GIF внизу
 holiday_message = get_today_holiday()
 gif_data = get_local_gif()
 
-# Формируем поздравление
 if "День" in holiday_message:
-    congratulation = f"🎉 Поздравляю с {holiday_message}! 🎊"
+    congratulation = f"🎉 Сгодня праздник {holiday_message}! 🎊"
 else:
-    congratulation = f" {holiday_message} 🎊"
+    congratulation = f"🎉 {holiday_message} 🎊"
 
 if gif_data:
     st.markdown(f"""
@@ -481,10 +414,7 @@ else:
         {congratulation}
     </div>
     """, unsafe_allow_html=True)
-    
-    st.warning("⚠️ GIF не найдена. Проверьте, что файл называется `animation.gif` и лежит в папке `assets/`")
 
-# Индикатор времени суток
 time_names = {
     "night": "🌙 Ночь",
     "dawn": "🌅 Рассвет",
@@ -496,10 +426,9 @@ time_names = {
 current_time = datetime.now().strftime("%H:%M")
 st.markdown(f'<div class="time-indicator">{time_names[time_of_day]} | {current_time}</div>', unsafe_allow_html=True)
 
-# Дополнительная информация
 st.markdown(f"""
 <div style="margin-top: 40px; text-align: center; color: {sky_style['text_color']}; opacity: 0.8;">
-    <p>💡 <i>Все отчёты генерируются автоматически и сохраняются в формате Excel</i></p>
+    <p> <i>Все отчёты генерируются автоматически и сохраняются в формате Excel</i></p>
     <p style="font-size: 0.9em; margin-top: 20px;">
         Система отчётов КР © 2026
     </p>
