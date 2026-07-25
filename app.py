@@ -1,14 +1,16 @@
-import streamlit as st
-import json
-from datetime import datetime
-import os
 import base64
+import json
+import random
+from datetime import datetime
+from pathlib import Path
 
-st.set_page_config(
-    page_title="Система отчетов КР", 
-    layout="wide",
-    page_icon="📊"
-)
+import streamlit as st
+
+# ==================== ПУТИ К ФАЙЛАМ ====================
+
+BASE_DIR = Path(__file__).parent
+ASSETS_DIR = BASE_DIR / "assets"
+HOLIDAYS_FILE = BASE_DIR / "holidays.json"
 
 # ==================== ОПРЕДЕЛЕНИЕ ВРЕМЕНИ СУТОК ====================
 
@@ -320,6 +322,21 @@ st.markdown(f"""
 # ==================== ФУНКЦИИ ====================
 
 def get_today_holiday():
+    """Возвращает праздник на сегодняшний день."""
+
+    try:
+        if not HOLIDAYS_FILE.exists():
+            return "🌟 Хорошего дня!"
+
+        with open(HOLIDAYS_FILE, "r", encoding="utf-8") as f:
+            holidays = json.load(f)
+
+        today_key = datetime.now().strftime("%m-%d")
+
+        return holidays.get(today_key, "🌟 Хорошего дня!")
+
+    except Exception:
+        return "🌟 Отличного настроения!"
     try:
         holidays_file = os.path.join(os.path.dirname(__file__), 'holidays.json')
         if os.path.exists(holidays_file):
@@ -334,6 +351,29 @@ def get_today_holiday():
         return "🌟 Отличного настроения!"
 
 def get_local_gif():
+    """Загружает GIF из папки assets."""
+
+    possible_names = [
+        "animation.gif",
+        "animation.GIF",
+        "Animation.gif",
+        "my_gif.gif"
+    ]
+
+    try:
+        for name in possible_names:
+            gif_path = ASSETS_DIR / name
+
+            if gif_path.exists():
+                with open(gif_path, "rb") as f:
+                    gif_base64 = base64.b64encode(f.read()).decode()
+
+                return f"data:image/gif;base64,{gif_base64}"
+
+    except Exception:
+        pass
+
+    return None
     try:
         possible_names = ['animation.gif', 'animation.GIF', 'Animation.gif', 'my_gif.gif']
         for name in possible_names:
