@@ -3,11 +3,11 @@ import json
 from datetime import datetime
 import os
 import base64
-streamlit --version
+
 st.set_page_config(
     page_title="Система отчетов КР", 
     layout="wide",
-    page_icon="📊"
+    page_icon=""
 )
 
 # ==================== ОПРЕДЕЛЕНИЕ ВРЕМЕНИ СУТОК ====================
@@ -37,7 +37,7 @@ def get_sky_css():
             "header_bg": "linear-gradient(90deg, #1e3a5f 0%, #2d5a87 100%)",
             "body_bg": "linear-gradient(180deg, #0f3460 0%, #1a1a2e 40%, #16213e 100%)",
             "cloud_color": "rgba(255,255,255,0.1)",
-            "celestial": "🌙",
+            "celestial": "",
             "text_color": "#e0e0e0",
             "card_bg": "rgba(30, 30, 60, 0.85)",
             "info_border": "#4a5568",
@@ -48,7 +48,7 @@ def get_sky_css():
             "header_bg": "linear-gradient(90deg, #ff9a76 0%, #ffcf48 100%)",
             "body_bg": "linear-gradient(180deg, #ff9a9e 0%, #fad0c4 40%, #ffd1ff 100%)",
             "cloud_color": "rgba(255,200,200,0.6)",
-            "celestial": "",
+            "celestial": "🌅",
             "text_color": "#2d3748",
             "card_bg": "rgba(255, 240, 245, 0.9)",
             "info_border": "#ff6b6b",
@@ -142,7 +142,6 @@ st.markdown(f"""
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }}
     
-    /* ЗАГОЛОВОК С СОЛНЦЕМ - через flexbox */
     .title-container {{
         display: flex;
         align-items: center;
@@ -156,7 +155,6 @@ st.markdown(f"""
         flex: 1;
     }}
     
-    /* СОЛНЦЕ С АНИМАЦИЕЙ */
     .celestial-body {{
         font-size: 3em;
         margin-left: 20px;
@@ -205,7 +203,6 @@ st.markdown(f"""
         margin: 10px 0;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         transition: transform 0.3s;
-        cursor: pointer;
     }}
     
     .report-card:hover {{
@@ -232,22 +229,6 @@ st.markdown(f"""
     
     .stSidebar a:hover {{
         color: #ff6b6b !important;
-    }}
-    
-    .stButton > button {{
-        background: {sky_style['header_bg']};
-        color: white;
-        border: none;
-        border-radius: 10px;
-        padding: 10px 20px;
-        font-weight: bold;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        transition: all 0.3s;
-    }}
-    
-    .stButton > button:hover {{
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
     }}
     
     .holiday-section {{
@@ -373,7 +354,7 @@ if time_of_day == "night":
 # Приветствие
 st.markdown(f"""
 <div class="info-block">
-    <h3 style="color: {sky_style['text_color']}; margin-top: 0;"> Доброго прекрасного денёчка!</h3>
+    <h3 style="color: {sky_style['text_color']}; margin-top: 0;">👋 Доброго прекрасного денёчка!</h3>
     <p style="font-size: 1.1em; color: {sky_style['text_color']};">
         Здесь вы можете формировать отчёты в один клик.<br>
         👈 <b>Выберите нужный отчёт в боковом меню слева.</b>
@@ -384,35 +365,48 @@ st.markdown(f"""
 # Доступные отчёты
 st.markdown(f"""
 <div class="report-card">
-    <h3 style="color: {sky_style['text_color']}; margin-top: 0;"> Доступные отчёты:</h3>
+    <h3 style="color: {sky_style['text_color']}; margin-top: 0;">📋 Доступные отчёты:</h3>
 </div>
 """, unsafe_allow_html=True)
 
 col1, col2, col3 = st.columns(3)
 
-# КЛИКАБЕЛЬНЫЕ КАРТОЧКИ С ПЕРЕХОДОМ НА ОТЧЁТЫ
-def create_report_card(title, description, page_name, icon):
+# КЛИКАБЕЛЬНЫЕ КАРТОЧКИ С КНОПКАМИ
+with col1:
     st.markdown(f"""
-    <div class="report-card" onclick="window.parent.document.location.href='/{page_name}'" style="cursor: pointer;">
-        <h4 style="color: {sky_style['text_color']}; margin: 0;">{icon} {title}</h4>
-        <p style="color: {sky_style['text_color']}; margin: 5px 0 0; font-size: 1em;">{description}</p>
+    <div class="report-card">
+        <h4 style="color: {sky_style['text_color']}; margin: 0;">📅 КР месяц</h4>
+        <p style="color: {sky_style['text_color']}; margin: 5px 0 0; font-size: 1em;">Сводный отчёт за месяц с фильтрацией</p>
     </div>
     """, unsafe_allow_html=True)
-
-with col1:
-    create_report_card("КР месяц", "Сводный отчёт за месяц с фильтрацией", "kr_month", "📅")
+    if st.button("📅 Перейти к отчёту", key="btn_month", use_container_width=True):
+        st.switch_page("pages/kr_month.py")
 
 with col2:
-    create_report_card("КР неделя", "Еженедельный сводный отчёт", "kr_week", "📆")
+    st.markdown(f"""
+    <div class="report-card">
+        <h4 style="color: {sky_style['text_color']}; margin: 0;">📆 КР неделя</h4>
+        <p style="color: {sky_style['text_color']}; margin: 5px 0 0; font-size: 1em;">Еженедельный сводный отчёт</p>
+    </div>
+    """, unsafe_allow_html=True)
+    if st.button("📆 Перейти к отчёту", key="btn_week", use_container_width=True):
+        st.switch_page("pages/kr_week.py")
 
 with col3:
-    create_report_card("Продукт", "Полный отчёт по продуктам", "produkt", "🍕")
+    st.markdown(f"""
+    <div class="report-card">
+        <h4 style="color: {sky_style['text_color']}; margin: 0;">🍕 Продукт</h4>
+        <p style="color: {sky_style['text_color']}; margin: 5px 0 0; font-size: 1em;">Полный отчёт по продуктам</p>
+    </div>
+    """, unsafe_allow_html=True)
+    if st.button(" Перейти к отчёту", key="btn_produkt", use_container_width=True):
+        st.switch_page("pages/prodykt.py")
 
 # Праздник и GIF
 holiday_message = get_today_holiday()
 gif_data = get_local_gif()
 
-congratulation = f"🎉 Сегодня праздник {holiday_message}! 🎊"
+congratulation = f" Сегодня праздник {holiday_message}! "
 
 if gif_data:
     st.markdown(f"""
@@ -434,8 +428,8 @@ else:
 
 # Индикатор времени
 time_names = {
-    "night": " Ночь",
-    "dawn": " Рассвет",
+    "night": "🌙 Ночь",
+    "dawn": "🌅 Рассвет",
     "morning": "🌤️ Утро",
     "day": "☀️ День",
     "evening": "🌇 Вечер",
