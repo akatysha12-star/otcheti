@@ -1,3 +1,112 @@
+import streamlit as st
+import json
+from datetime import datetime
+import os
+import base64
+
+st.set_page_config(
+    page_title="Система отчетов КР", 
+    layout="wide",
+    page_icon="📊"
+)
+
+# ==================== ОПРЕДЕЛЕНИЕ ВРЕМЕНИ СУТОК ====================
+
+def get_time_of_day():
+    hour = datetime.now().hour
+    if 0 <= hour < 5:
+        return "night"
+    elif 5 <= hour < 7:
+        return "dawn"
+    elif 7 <= hour < 10:
+        return "morning"
+    elif 10 <= hour < 17:
+        return "day"
+    elif 17 <= hour < 20:
+        return "evening"
+    elif 20 <= hour < 22:
+        return "dusk"
+    else:
+        return "night"
+
+def get_sky_css():
+    time_of_day = get_time_of_day()
+    
+    styles = {
+        "night": {
+            "header_bg": "linear-gradient(90deg, #1e3a5f 0%, #2d5a87 100%)",
+            "body_bg": "linear-gradient(180deg, #0f3460 0%, #1a1a2e 40%, #16213e 100%)",
+            "cloud_color": "rgba(255,255,255,0.1)",
+            "celestial": "🌙",
+            "text_color": "#e0e0e0",
+            "card_bg": "rgba(30, 30, 60, 0.85)",
+            "info_border": "#4a5568",
+            "sidebar_bg": "linear-gradient(180deg, #2d5a87 0%, #1e3a5f 100%)",
+            "sidebar_text": "#b8d4e8"
+        },
+        "dawn": {
+            "header_bg": "linear-gradient(90deg, #ff9a76 0%, #ffcf48 100%)",
+            "body_bg": "linear-gradient(180deg, #ff9a9e 0%, #fad0c4 40%, #ffd1ff 100%)",
+            "cloud_color": "rgba(255,200,200,0.6)",
+            "celestial": "",
+            "text_color": "#2d3748",
+            "card_bg": "rgba(255, 240, 245, 0.9)",
+            "info_border": "#ff6b6b",
+            "sidebar_bg": "linear-gradient(180deg, #ffe4e1 0%, #ffd1dc 100%)",
+            "sidebar_text": "#8b4513"
+        },
+        "morning": {
+            "header_bg": "linear-gradient(90deg, #87ceeb 0%, #98d8e8 100%)",
+            "body_bg": "linear-gradient(180deg, #87ceeb 0%, #b0e0e6 40%, #e0f6ff 100%)",
+            "cloud_color": "rgba(255,255,255,0.7)",
+            "celestial": "🌤️",
+            "text_color": "#1a365d",
+            "card_bg": "rgba(255, 255, 255, 0.9)",
+            "info_border": "#74b9ff",
+            "sidebar_bg": "linear-gradient(180deg, #e0f2fe 0%, #bae6fd 100%)",
+            "sidebar_text": "#1e3a5f"
+        },
+        "day": {
+            "header_bg": "linear-gradient(90deg, #87ceeb 0%, #b0e0e6 100%)",
+            "body_bg": "linear-gradient(180deg, #87CEEB 0%, #B0E0E6 40%, #E0F6FF 100%)",
+            "cloud_color": "rgba(255,255,255,0.8)",
+            "celestial": "☀️",
+            "text_color": "#1a365d",
+            "card_bg": "rgba(255, 255, 255, 0.9)",
+            "info_border": "#2c5282",
+            "sidebar_bg": "linear-gradient(180deg, #e0f2fe 0%, #bae6fd 100%)",
+            "sidebar_text": "#1e3a5f"
+        },
+        "evening": {
+            "header_bg": "linear-gradient(90deg, #ff9a76 0%, #ffcf48 100%)",
+            "body_bg": "linear-gradient(180deg, #ff9a76 0%, #ffcf48 40%, #ff6b6b 100%)",
+            "cloud_color": "rgba(255,220,180,0.7)",
+            "celestial": "🌇",
+            "text_color": "#2d3748",
+            "card_bg": "rgba(255, 245, 230, 0.9)",
+            "info_border": "#ff7e5f",
+            "sidebar_bg": "linear-gradient(180deg, #ffe4e1 0%, #ffd1dc 100%)",
+            "sidebar_text": "#8b4513"
+        },
+        "dusk": {
+            "header_bg": "linear-gradient(90deg, #667eea 0%, #764ba2 100%)",
+            "body_bg": "linear-gradient(180deg, #667eea 0%, #764ba2 40%, #2d3561 100%)",
+            "cloud_color": "rgba(200,180,255,0.5)",
+            "celestial": "🌆",
+            "text_color": "#e0e0e0",
+            "card_bg": "rgba(40, 40, 80, 0.85)",
+            "info_border": "#764ba2",
+            "sidebar_bg": "linear-gradient(180deg, #e6e6fa 0%, #d8bfd8 100%)",
+            "sidebar_text": "#4a4a6a"
+        }
+    }
+    
+    return styles[time_of_day], time_of_day
+
+sky_style, time_of_day = get_sky_css()
+
+# ==================== CSS СТИЛИ ====================
+
 st.markdown(f"""
 <style>
     .stApp {{
@@ -205,4 +314,147 @@ st.markdown(f"""
         z-index: 10;
     }}
 </style>
+""", unsafe_allow_html=True)
+
+# ==================== ФУНКЦИИ ====================
+
+def get_today_holiday():
+    try:
+        holidays_file = os.path.join(os.path.dirname(__file__), 'holidays.json')
+        if os.path.exists(holidays_file):
+            with open(holidays_file, 'r', encoding='utf-8') as f:
+                holidays = json.load(f)
+            today = datetime.now()
+            today_key = f"{today.month:02d}-{today.day:02d}"
+            if today_key in holidays:
+                return holidays[today_key]
+        return "🌟 Хорошего дня!"
+    except Exception as e:
+        return "🌟 Отличного настроения!"
+
+def get_local_gif():
+    try:
+        possible_names = ['animation.gif', 'animation.GIF', 'Animation.gif', 'my_gif.gif']
+        for name in possible_names:
+            gif_path = os.path.join(os.path.dirname(__file__), 'assets', name)
+            if os.path.exists(gif_path):
+                with open(gif_path, 'rb') as f:
+                    gif_bytes = f.read()
+                    gif_base64 = base64.b64encode(gif_bytes).decode()
+                    return f"data:image/gif;base64,{gif_base64}"
+        return None
+    except Exception as e:
+        return None
+
+# ==================== ГЛАВНАЯ СТРАНИЦА ====================
+
+# Заголовок с солнцем через flexbox
+st.markdown(f"""
+<div class="title-container">
+    <h1>📊 Система формирования отчётов</h1>
+    <div class="celestial-body">{sky_style["celestial"]}</div>
+</div>
+""", unsafe_allow_html=True)
+
+# Звёзды для ночи
+if time_of_day == "night":
+    stars_html = '<div class="stars">'
+    import random
+    for _ in range(50):
+        left = random.randint(0, 100)
+        top = random.randint(0, 50)
+        size = random.randint(1, 3)
+        delay = random.uniform(0, 3)
+        stars_html += f'<div class="star" style="left: {left}%; top: {top}%; width: {size}px; height: {size}px; animation-delay: {delay}s;"></div>'
+    stars_html += '</div>'
+    st.markdown(stars_html, unsafe_allow_html=True)
+
+# Приветствие
+st.markdown(f"""
+<div class="info-block">
+    <h3 style="color: {sky_style['text_color']}; margin-top: 0;"> Доброго прекрасного денёчка!</h3>
+    <p style="font-size: 1.1em; color: {sky_style['text_color']};">
+        Здесь вы можете формировать отчёты в один клик.<br>
+        👈 <b>Выберите нужный отчёт в боковом меню слева.</b>
+    </p>
+</div>
+""", unsafe_allow_html=True)
+
+# Доступные отчёты
+st.markdown(f"""
+<div class="report-card">
+    <h3 style="color: {sky_style['text_color']}; margin-top: 0;"> Доступные отчёты:</h3>
+</div>
+""", unsafe_allow_html=True)
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.markdown(f"""
+    <div class="report-card">
+        <h4 style="color: {sky_style['text_color']};">📅 КР месяц</h4>
+        <p style="color: {sky_style['text_color']};">Сводный отчёт за месяц с фильтрацией</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.markdown(f"""
+    <div class="report-card">
+        <h4 style="color: {sky_style['text_color']};">📆 КР неделя</h4>
+        <p style="color: {sky_style['text_color']};">Еженедельный сводный отчёт</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col3:
+    st.markdown(f"""
+    <div class="report-card">
+        <h4 style="color: {sky_style['text_color']};">🍕 Продукт</h4>
+        <p style="color: {sky_style['text_color']};">Полный отчёт по продуктам</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Праздник и GIF
+holiday_message = get_today_holiday()
+gif_data = get_local_gif()
+
+congratulation = f"🎉 Сегодня праздник {holiday_message}! 🎊"
+
+if gif_data:
+    st.markdown(f"""
+    <div class="holiday-section">
+        <div class="holiday-banner">
+            {congratulation}
+        </div>
+        <div class="gif-container">
+            <img src="{gif_data}" alt="Праздничная анимация">
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    st.markdown(f"""
+    <div class="holiday-banner" style="max-width: 600px; margin: 30px auto;">
+        {congratulation}
+    </div>
+    """, unsafe_allow_html=True)
+
+# Индикатор времени
+time_names = {
+    "night": " Ночь",
+    "dawn": " Рассвет",
+    "morning": "🌤️ Утро",
+    "day": "☀️ День",
+    "evening": "🌇 Вечер",
+    "dusk": "🌆 Сумерки"
+}
+current_time = datetime.now().strftime("%H:%M")
+st.markdown(f'<div class="time-indicator">{time_names[time_of_day]} | {current_time}</div>', unsafe_allow_html=True)
+
+# Дополнительная информация
+st.markdown(f"""
+<div style="margin-top: 40px; text-align: center; color: {sky_style['text_color']}; opacity: 0.8;">
+    <p>💡 <i>Все отчёты генерируются автоматически и сохраняются в формате Excel</i></p>
+    <p style="font-size: 0.9em; margin-top: 20px;">
+        Система отчётов КР © 2026
+    </p>
+</div>
 """, unsafe_allow_html=True)
