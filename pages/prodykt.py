@@ -130,7 +130,6 @@ def read_main_file_raw(uploaded_file):
     return df
 
 def parse_main_file(uploaded_file):
-    """Возвращает данные, сгруппированные по ['Юридическое лицо', 'Категория_отчёт', 'Блюдо_очищенное']."""
     df = read_main_file_raw(uploaded_file)
     df = df[~df['Блюдо'].apply(is_half_pizza)]
     df['Категория_отчёт'] = df['Категория блюда'].astype(str).str.strip().str.lower().map(CATEGORY_MAPPING)
@@ -143,7 +142,6 @@ def parse_main_file(uploaded_file):
     }).reset_index()
 
 def parse_combo_file(uploaded_file):
-    """Возвращает данные, сгруппированные по ['Юридическое лицо', 'Категория_отчёт', 'Блюдо_очищенное']."""
     df = pd.read_excel(uploaded_file, header=None)
     header_row = None
     for idx, row in df.iterrows():
@@ -178,7 +176,6 @@ def parse_combo_file(uploaded_file):
 # ==================== СОЗДАНИЕ ЛИСТОВ ====================
 
 def create_rating_sheet(wb, all_data):
-    """Создаёт лист Рейтинг. Агрегирует комбо по городу."""
     ws = wb.create_sheet('Рейтинг')
     thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
     for idx, cat in enumerate(CATEGORIES_ORDER, 1):
@@ -195,17 +192,12 @@ def create_rating_sheet(wb, all_data):
             cell.border = thin_border
             cell.alignment = Alignment(horizontal='center', vertical='center')
     
-    # ✅ Добавляем колонку 'Город'
     all_data['Город'] = all_data['Юридическое лицо'].apply(map_city)
     all_data = all_data[all_data['Город'].notna()]
     all_data = all_data[all_data['Категория_отчёт'].isin(['пиццы', 'закуски', 'напитки', 'десерты', 'комбо и радости', 'завтраки'])]
     
-    # ✅ АГРЕГАЦИЯ ПО ГОРОДУ: groupby(['Город', 'Категория_отчёт', 'Блюдо_очищенное'])
-    all_data = all_data.groupby(['Город', 'Категория_отчёт', 'Блюдо_очищенное']).agg({
-        'Количество блюд': 'sum',
-        'Сумма со скидкой, р.': 'sum',
-        'Чеков': 'sum'
-    }).reset_index()
+    # ✅ ИСКЛЮЧАЕМ МАСТЕР-КЛАСС ИЗ КОМБО В РЕЙТИНГЕ
+    all_data = all_data[~all_data['Блюдо_очищенное'].str.lower().str.contains('мастер', na=False)]
     
     city_items = {}
     max_items = 0
@@ -346,17 +338,14 @@ def create_pizza_sheet(wb, df_main_raw):
     create_table(tyumen_data, "Тюмень", 11, 1)
 
 def create_combo_sheet(wb, df_combo):
-    """Создаёт лист Комбо. Агрегирует по городу."""
     ws = wb.create_sheet("Комбо")
     thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
     
-    # ✅ Добавляем колонку 'Город' и агрегируем по городу
     df_combo = df_combo.copy()
     df_combo['Город'] = df_combo['Юридическое лицо'].apply(map_city)
     df_combo = df_combo[df_combo['Город'].notna()]
     df_combo = df_combo[~df_combo['Блюдо_очищенное'].str.lower().str.contains('мастер', na=False)]
     
-    # ✅ АГРЕГАЦИЯ ПО ГОРОДУ
     grouped = df_combo.groupby(['Город', 'Блюдо_очищенное']).agg({
         'Количество блюд': 'sum',
         'Сумма со скидкой, р.': 'sum'
@@ -680,7 +669,7 @@ col1, col2 = st.columns(2)
 with col1:
     file_main = st.file_uploader("📁 Основной файл", type=['xlsx'])
 with col2:
-    file_combo = st.file_uploader(" Файл комбо", type=['xlsx'])
+    file_combo = st.file_uploader("📁 Файл комбо", type=['xlsx'])
 
 if file_main and file_combo:
     st.success("✅ Оба файла загружены!")
@@ -692,7 +681,7 @@ if file_main and file_combo:
                 df_main = parse_main_file(file_main)
                 df_combo = parse_combo_file(file_combo)
                 
-                # ✅ Объединяем данные (оба сгруппированы по ['Юридическое лицо', ...])
+                # ✅ Объединяем данные для листа Рейтинг
                 all_data = pd.concat([df_main, df_combo], ignore_index=True)
                 
                 wb = Workbook()
