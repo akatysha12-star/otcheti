@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 import re
 import io
-import os
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -104,7 +103,8 @@ def extract_size(category):
         if str(size) in str(category): return size
     return None
 
-def parse_main_file(uploaded_file):
+def read_main_file_raw(uploaded_file):
+    """Читает основной файл и возвращает СЫРОЙ DataFrame (без groupby)."""
     df = pd.read_excel(uploaded_file, header=None)
     header_row = None
     for idx, row in df.iterrows():
@@ -123,10 +123,15 @@ def parse_main_file(uploaded_file):
     df = df[~df['Блюдо'].astype(str).str.lower().str.contains('персонал', na=False)]
     df = df[df['Блюдо'].notna()]
     df = df[df['Блюдо'].astype(str).str.strip() != '']
-    df = df[~df['Блюдо'].apply(is_half_pizza)]
     df['Количество блюд'] = pd.to_numeric(df['Количество блюд'], errors='coerce').fillna(0)
     df['Сумма со скидкой, р.'] = pd.to_numeric(df['Сумма со скидкой, р.'], errors='coerce').fillna(0)
     df['Чеков'] = pd.to_numeric(df['Чеков'], errors='coerce').fillna(0)
+    return df
+
+def parse_main_file(uploaded_file):
+    """Возвращает сгруппированный DataFrame для листа Рейтинг."""
+    df = read_main_file_raw(uploaded_file)
+    df = df[~df['Блюдо'].apply(is_half_pizza)]
     df['Категория_отчёт'] = df['Категория блюда'].astype(str).str.strip().str.lower().map(CATEGORY_MAPPING)
     df = df[df['Категория_отчёт'].notna()]
     df['Блюдо_очищенное'] = df['Блюдо'].apply(clean_dish_name)
@@ -137,7 +142,6 @@ def parse_main_file(uploaded_file):
     }).reset_index()
 
 def parse_combo_file(uploaded_file):
-    """Парсит файл комбо. Возвращает данные, сгруппированные по ['Юридическое лицо', 'Категория_отчёт', 'Блюдо_очищенное']."""
     df = pd.read_excel(uploaded_file, header=None)
     header_row = None
     for idx, row in df.iterrows():
@@ -160,15 +164,9 @@ def parse_combo_file(uploaded_file):
     df = df.rename(columns={'Название Комбо': 'Блюдо_очищенное', 'Количество Комбо': 'Количество блюд'})
     df['Блюдо_очищенное'] = df['Блюдо_очищенное'].apply(clean_dish_name)
     df['Категория_отчёт'] = 'комбо и радости'
-    
-    # ✅ УНИФИЦИРОВАННАЯ АГРЕГАЦИЯ: groupby по ['Юридическое лицо', 'Категория_отчёт', 'Блюдо_очищенное']
-    grouped = df.groupby(['Юридическое лицо', 'Категория_отчёт', 'Блюдо_очищенное']).agg({
-        'Количество блюд': 'sum',
-        'Сумма со скидкой, р.': 'sum',
-        'Чеков': 'sum'
+    return df.groupby(['Юридическое лицо', 'Категория_отчёт', 'Блюдо_очищенное']).agg({
+        'Количество блюд': 'sum', 'Сумма со скидкой, р.': 'sum', 'Чеков': 'sum'
     }).reset_index()
-    
-    return grouped
 
 # ==================== СОЗДАНИЕ ЛИСТОВ ====================
 
@@ -324,24 +322,16 @@ def create_pizza_sheet(wb, df_main):
     create_table(tyumen_data, "Тюмень", 11, 1)
 
 def create_combo_sheet(wb, df_combo):
-    """Создаёт лист Комбо. Использует те же данные, что и лист Рейтинг."""
     ws = wb.create_sheet("Комбо")
     thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
-    
-    # ✅ Добавляем город к данным комбо
     df_combo = df_combo.copy()
     df_combo['Город'] = df_combo['Юридическое лицо'].apply(map_city)
     df_combo = df_combo[df_combo['Город'].notna()]
-    
-    # ✅ Исключаем Мастер-класс
     df_combo = df_combo[~df_combo['Блюдо_очищенное'].str.lower().str.contains('мастер', na=False)]
-    
-    # ✅ Агрегируем по ['Город', 'Блюдо_очищенное'] — это даёт те же суммы, что и в Рейтинге
     grouped = df_combo.groupby(['Город', 'Блюдо_очищенное']).agg({
         'Количество блюд': 'sum',
         'Сумма со скидкой, р.': 'sum'
     }).reset_index()
-    
     ws.cell(1, 1, 'СПБ').font = Font(bold=True, size=12)
     ws.cell(1, 6, 'Тюмень').font = Font(bold=True, size=12)
     headers = ['Блюдо', 'Количество блюд', 'Сумма со скидкой, р.', '% от числа всех комбо']
@@ -351,7 +341,6 @@ def create_combo_sheet(wb, df_combo):
             cell.font = Font(bold=True, size=10)
             cell.border = thin_border
             cell.alignment = Alignment(horizontal='center', vertical='center')
-    
     city_data_1 = {}
     for city in ['СПБ', 'Тюмень']:
         city_df = grouped[grouped['Город'] == city].copy()
@@ -359,10 +348,8 @@ def create_combo_sheet(wb, df_combo):
         city_df['%_qty'] = city_df['Количество блюд'] / total_qty if total_qty > 0 else 0
         city_df = city_df.sort_values('%_qty', ascending=False).reset_index(drop=True)
         city_data_1[city] = city_df
-    
     max_items_1 = max(len(city_data_1['СПБ']), len(city_data_1['Тюмень'])) if len(city_data_1['СПБ']) > 0 or len(city_data_1['Тюмень']) > 0 else 0
     total_row_1 = 3 + max_items_1
-    
     for idx in range(max_items_1):
         row = 3 + idx
         for city, start_col in [('СПБ', 1), ('Тюмень', 6)]:
@@ -375,7 +362,6 @@ def create_combo_sheet(wb, df_combo):
                 c = ws.cell(row, start_col + 3, formula)
                 c.border = thin_border
                 c.number_format = '0.00%'
-    
     for city, start_col in [('СПБ', 1), ('Тюмень', 6)]:
         col_b, col_c, col_d = start_col + 1, start_col + 2, start_col + 3
         total_cell = ws.cell(total_row_1, start_col, 'Итого' if city == 'СПБ' else 'Итого:')
@@ -388,7 +374,6 @@ def create_combo_sheet(wb, df_combo):
         c.font = Font(bold=True)
         c.border = thin_border
         c.number_format = '0.00%'
-    
     start_row_2 = total_row_1 + 3
     ws.cell(start_row_2, 1, 'СПБ').font = Font(bold=True, size=12)
     ws.cell(start_row_2, 6, 'Тюмень').font = Font(bold=True, size=12)
@@ -399,7 +384,6 @@ def create_combo_sheet(wb, df_combo):
             cell.font = Font(bold=True, size=10)
             cell.border = thin_border
             cell.alignment = Alignment(horizontal='center', vertical='center')
-    
     city_data_2 = {}
     for city in ['СПБ', 'Тюмень']:
         city_df = grouped[grouped['Город'] == city].copy()
@@ -407,11 +391,9 @@ def create_combo_sheet(wb, df_combo):
         city_df['%_sum'] = city_df['Сумма со скидкой, р.'] / total_sum if total_sum > 0 else 0
         city_df = city_df.sort_values('%_sum', ascending=False).reset_index(drop=True)
         city_data_2[city] = city_df
-    
     max_items_2 = max(len(city_data_2['СПБ']), len(city_data_2['Тюмень'])) if len(city_data_2['СПБ']) > 0 or len(city_data_2['Тюмень']) > 0 else 0
     data_start_2 = start_row_2 + 2
     total_row_2 = data_start_2 + max_items_2
-    
     for idx in range(max_items_2):
         row = data_start_2 + idx
         for city, start_col in [('СПБ', 1), ('Тюмень', 6)]:
@@ -424,7 +406,6 @@ def create_combo_sheet(wb, df_combo):
                 c = ws.cell(row, start_col + 3, formula)
                 c.border = thin_border
                 c.number_format = '0.00%'
-    
     for city, start_col in [('СПБ', 1), ('Тюмень', 6)]:
         col_b, col_c, col_d = start_col + 1, start_col + 2, start_col + 3
         total_cell = ws.cell(total_row_2, start_col, 'Итого' if city == 'СПБ' else 'Итого:')
@@ -438,41 +419,53 @@ def create_combo_sheet(wb, df_combo):
         c.border = thin_border
         c.number_format = '0.00%'
 
-def create_category_share_sheet(wb, df_main, df_combo):
+def classify_for_share(row):
+    """Классифицирует сырую строку в одну из 7 категорий."""
+    cat = str(row['Категория блюда']).strip().lower()
+    name = str(row['Блюдо']).strip().lower()
+    if 'тесто' in cat and 'половинки' not in cat: return 'Пиццы'
+    if 'половинки' in cat: return 'Пиццы половинки'
+    if cat in ['напитки', 'пиво']: return 'Напитки'
+    if cat == 'десерты': return 'Десерты'
+    if cat == 'завтраки':
+        if 'омлет' in name: return 'Закуски'
+        if 'сырник' in name or 'панкейк' in name: return 'Десерты'
+        return None
+    if cat in ['закуски', 'горячее', 'супы', 'салаты']: return 'Закуски'
+    if cat == 'дополнительно':
+        if 'доставк' in name or 'перчик' in name or 'мастер' in name: return None
+        if 'соус' in name or 'мед цветочн' in name or 'сгущен' in name: return 'Соусы'
+        return None
+    return None
+
+def create_category_share_sheet(wb, df_main_raw, df_combo):
+    """Использует СЫРОЙ основной файл."""
     ws = wb.create_sheet("Доля категорий")
     thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
     CATEGORIES_SHARE = ['Десерты', 'Закуски', 'Напитки', 'Пиццы', 'Пиццы половинки', 'Сеты', 'Соусы']
-    df_main_share = df_main.copy()
+    
+    # Обрабатываем сырой основной файл
+    df_main_share = df_main_raw.copy()
     df_main_share['Город'] = df_main_share['Юридическое лицо'].apply(map_city)
     df_main_share = df_main_share[df_main_share['Город'].notna()]
-    def classify_share(row):
-        cat = str(row['Категория блюда']).strip().lower()
-        name = str(row['Блюдо']).strip().lower()
-        if 'тесто' in cat and 'половинки' not in cat: return 'Пиццы'
-        if 'половинки' in cat: return 'Пиццы половинки'
-        if cat in ['напитки', 'пиво']: return 'Напитки'
-        if cat == 'десерты': return 'Десерты'
-        if cat == 'завтраки':
-            if 'омлет' in name: return 'Закуски'
-            if 'сырник' in name or 'панкейк' in name: return 'Десерты'
-        if cat in ['закуски', 'горячее', 'супы', 'салаты']: return 'Закуски'
-        if cat == 'дополнительно':
-            if 'доставк' in name or 'перчик' in name: return None
-            if 'соус' in name or 'мед цветочн' in name or 'сгущен' in name: return 'Соусы'
-        return None
-    df_main_share['Категория_доля'] = df_main_share.apply(classify_share, axis=1)
+    df_main_share['Категория_доля'] = df_main_share.apply(classify_for_share, axis=1)
     df_main_share = df_main_share[df_main_share['Категория_доля'].notna()]
+    
+    # Обрабатываем комбо
     df_combo_share = df_combo.copy()
     df_combo_share['Город'] = df_combo_share['Юридическое лицо'].apply(map_city)
     df_combo_share = df_combo_share[df_combo_share['Город'].notna()]
     df_combo_share = df_combo_share[~df_combo_share['Блюдо_очищенное'].str.lower().str.contains('мастер', na=False)]
     df_combo_share['Категория_доля'] = 'Сеты'
+    
     df_all_share = pd.concat([df_main_share, df_combo_share], ignore_index=True)
     grouped = df_all_share.groupby(['Город', 'Категория_доля']).agg({'Количество блюд': 'sum', 'Сумма со скидкой, р.': 'sum'}).reset_index()
+    
     city_totals = {}
     for city in ['СПБ', 'Тюмень']:
         city_data = grouped[grouped['Город'] == city]
         city_totals[city] = {'qty': city_data['Количество блюд'].sum(), 'sum': city_data['Сумма со скидкой, р.'].sum()}
+    
     city_category_data = {}
     for city in ['СПБ', 'Тюмень']:
         city_data = grouped[grouped['Город'] == city]
@@ -486,8 +479,10 @@ def create_category_share_sheet(wb, df_main, df_combo):
             pct_sum = sum_val / total_sum if total_sum > 0 else 0
             cat_data[cat] = {'qty': qty, 'sum': sum_val, 'pct_qty': pct_qty, 'pct_sum': pct_sum}
         city_category_data[city] = cat_data
+    
     sorted_cats_qty = sorted(CATEGORIES_SHARE, key=lambda cat: city_category_data['СПБ'][cat]['pct_qty'], reverse=True)
     sorted_cats_sum = sorted(CATEGORIES_SHARE, key=lambda cat: city_category_data['СПБ'][cat]['pct_sum'], reverse=True)
+    
     ws.cell(1, 1, 'СПБ').font = Font(bold=True, size=12)
     ws.cell(1, 6, 'Тюмень').font = Font(bold=True, size=12)
     headers_1 = ['Категория', 'кол-во', 'выручка', '%']
@@ -521,6 +516,7 @@ def create_category_share_sheet(wb, df_main, df_combo):
         c.font = Font(bold=True)
         c.border = thin_border
         c.number_format = '0.00%'
+    
     start_row_2 = total_row_1 + 3
     ws.cell(start_row_2, 1, 'СПБ').font = Font(bold=True, size=12)
     ws.cell(start_row_2, 6, 'Тюмень').font = Font(bold=True, size=12)
@@ -556,42 +552,33 @@ def create_category_share_sheet(wb, df_main, df_combo):
         c.border = thin_border
         c.number_format = '0.00%'
 
-def create_category_dynamics_sheet(wb, df_main, df_combo):
+def create_category_dynamics_sheet(wb, df_main_raw, df_combo):
+    """Использует СЫРОЙ основной файл."""
     ws = wb.create_sheet("Доля категорий динамика")
     thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
     CATEGORIES_DYN = ['Десерты', 'Закуски', 'Напитки', 'Пиццы', 'Пиццы половинки', 'Сеты', 'Соусы']
-    df_main_dyn = df_main.copy()
+    
+    df_main_dyn = df_main_raw.copy()
     df_main_dyn['Город'] = df_main_dyn['Юридическое лицо'].apply(map_city)
     df_main_dyn = df_main_dyn[df_main_dyn['Город'].notna()]
-    def classify_dyn(row):
-        cat = str(row['Категория блюда']).strip().lower()
-        name = str(row['Блюдо']).strip().lower()
-        if 'тесто' in cat and 'половинки' not in cat: return 'Пиццы'
-        if 'половинки' in cat: return 'Пиццы половинки'
-        if cat in ['напитки', 'пиво']: return 'Напитки'
-        if cat == 'десерты': return 'Десерты'
-        if cat == 'завтраки':
-            if 'омлет' in name: return 'Закуски'
-            if 'сырник' in name or 'панкейк' in name: return 'Десерты'
-        if cat in ['закуски', 'горячее', 'супы', 'салаты']: return 'Закуски'
-        if cat == 'дополнительно':
-            if 'доставк' in name or 'перчик' in name: return None
-            if 'соус' in name or 'мед цветочн' in name or 'сгущен' in name: return 'Соусы'
-        return None
-    df_main_dyn['Категория_доля'] = df_main_dyn.apply(classify_dyn, axis=1)
+    df_main_dyn['Категория_доля'] = df_main_dyn.apply(classify_for_share, axis=1)
     df_main_dyn = df_main_dyn[df_main_dyn['Категория_доля'].notna()]
+    
     df_combo_dyn = df_combo.copy()
     df_combo_dyn['Город'] = df_combo_dyn['Юридическое лицо'].apply(map_city)
     df_combo_dyn = df_combo_dyn[df_combo_dyn['Город'].notna()]
     df_combo_dyn = df_combo_dyn[~df_combo_dyn['Блюдо_очищенное'].str.lower().str.contains('мастер', na=False)]
     df_combo_dyn['Категория_доля'] = 'Сеты'
+    
     df_all_dyn = pd.concat([df_main_dyn, df_combo_dyn], ignore_index=True)
     grouped = df_all_dyn.groupby(['Город', 'Категория_доля']).agg({'Количество блюд': 'sum', 'Сумма со скидкой, р.': 'sum'}).reset_index()
+    
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=9)
     cell = ws.cell(1, 1, "Июль 2026г.")
     cell.font = Font(bold=True, size=14)
     cell.alignment = Alignment(horizontal='center', vertical='center')
     cell.fill = PatternFill(start_color='D9E1F2', end_color='D9E1F2', fill_type='solid')
+    
     ws.cell(3, 1, 'СПБ').font = Font(bold=True, size=12)
     ws.cell(3, 1, 'СПБ').fill = PatternFill(start_color='D9E1F2', end_color='D9E1F2', fill_type='solid')
     headers = ['Категория', 'Доля по кол-ву %', 'Доля по выручке%']
@@ -600,6 +587,7 @@ def create_category_dynamics_sheet(wb, df_main, df_combo):
         cell.font = Font(bold=True, size=10)
         cell.border = thin_border
         cell.alignment = Alignment(horizontal='center', vertical='center')
+    
     spb_data = grouped[grouped['Город'] == 'СПБ']
     total_qty_spb = spb_data['Количество блюд'].sum()
     total_sum_spb = spb_data['Сумма со скидкой, р.'].sum()
@@ -617,6 +605,7 @@ def create_category_dynamics_sheet(wb, df_main, df_combo):
         c2 = ws.cell(row, 3, pct_sum)
         c2.border = thin_border
         c2.number_format = '0.00%'
+    
     ws.cell(14, 1, 'Тюмень').font = Font(bold=True, size=12)
     ws.cell(14, 1, 'Тюмень').fill = PatternFill(start_color='D9E1F2', end_color='D9E1F2', fill_type='solid')
     for idx, header in enumerate(headers, 1):
@@ -624,6 +613,7 @@ def create_category_dynamics_sheet(wb, df_main, df_combo):
         cell.font = Font(bold=True, size=10)
         cell.border = thin_border
         cell.alignment = Alignment(horizontal='center', vertical='center')
+    
     tmn_data = grouped[grouped['Город'] == 'Тюмень']
     total_qty_tmn = tmn_data['Количество блюд'].sum()
     total_sum_tmn = tmn_data['Сумма со скидкой, р.'].sum()
@@ -661,21 +651,31 @@ if file_main and file_combo:
     if st.button("🚀 Сгенерировать отчет", type="primary"):
         with st.spinner("⏳ Формирую отчет..."):
             try:
+                # Читаем сырые данные для Доли категорий
+                df_main_raw = read_main_file_raw(file_main)
+                
+                # Сбрасываем позицию файла для повторного чтения
+                file_main.seek(0)
+                
+                # Сгруппированные данные для Рейтинга и Пицц
                 df_main = parse_main_file(file_main)
                 df_combo = parse_combo_file(file_combo)
                 all_data = pd.concat([df_main, df_combo], ignore_index=True)
+                
                 wb = Workbook()
                 if 'Sheet' in wb.sheetnames: del wb['Sheet']
+                
                 create_rating_sheet(wb, all_data)
-                create_pizza_sheet(wb, df_main)
+                create_pizza_sheet(wb, df_main_raw)  # Для пицц нужны сырые данные (Категория блюда)
                 create_combo_sheet(wb, df_combo)
-                create_category_share_sheet(wb, df_main, df_combo)
-                create_category_dynamics_sheet(wb, df_main, df_combo)
+                create_category_share_sheet(wb, df_main_raw, df_combo)
+                create_category_dynamics_sheet(wb, df_main_raw, df_combo)
+                
                 output = io.BytesIO()
                 wb.save(output)
                 output.seek(0)
                 st.success("✅ Отчет сформирован!")
-                st.download_button(label="📥 Скачать Итоговый_отчет.xlsx", data=output, file_name="Итоговый_отчет_Продукт.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                st.download_button(label=" Скачать Итоговый_отчет.xlsx", data=output, file_name="Итоговый_отчет_Продукт.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
             except Exception as e:
                 st.error(f" Ошибка: {str(e)}")
 else:
