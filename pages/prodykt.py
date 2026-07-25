@@ -10,8 +10,80 @@ from openpyxl.utils import get_column_letter
 import warnings
 warnings.filterwarnings('ignore')
 
-st.set_page_config(page_title="Отчет Продукт", layout="wide")
+# ==================== СТИЛИ ИНТЕРФЕЙСА ====================
+
+st.set_page_config(page_title="Отчет Продукт", layout="wide", page_icon="🍕")
+
+# Фон с облаками через CSS
+st.markdown("""
+<style>
+    /* Основной фон страницы */
+    .stApp {
+        background: linear-gradient(180deg, #87CEEB 0%, #B0E0E6 40%, #E0F6FF 100%);
+        min-height: 100vh;
+    }
+    
+    /* Облака через псевдо-элементы */
+    .stApp::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: 
+            radial-gradient(ellipse 120px 60px at 15% 20%, rgba(255,255,255,0.8) 0%, transparent 70%),
+            radial-gradient(ellipse 180px 80px at 25% 18%, rgba(255,255,255,0.6) 0%, transparent 70%),
+            radial-gradient(ellipse 100px 50px at 60% 15%, rgba(255,255,255,0.7) 0%, transparent 70%),
+            radial-gradient(ellipse 150px 70px at 70% 12%, rgba(255,255,255,0.5) 0%, transparent 70%),
+            radial-gradient(ellipse 200px 90px at 85% 25%, rgba(255,255,255,0.6) 0%, transparent 70%),
+            radial-gradient(ellipse 130px 60px at 45% 30%, rgba(255,255,255,0.5) 0%, transparent 70%),
+            radial-gradient(ellipse 160px 70px at 10% 35%, rgba(255,255,255,0.4) 0%, transparent 70%),
+            radial-gradient(ellipse 140px 65px at 90% 40%, rgba(255,255,255,0.5) 0%, transparent 70%);
+        pointer-events: none;
+        z-index: 0;
+    }
+    
+    /* Контент поверх облаков */
+    .stApp > div {
+        position: relative;
+        z-index: 1;
+    }
+    
+    /* Стили для карточек и блоков */
+    .stButton > button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 20px;
+        font-weight: bold;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        transition: transform 0.2s;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+    
+    /* Заголовок страницы */
+    h1 {
+        color: #1a365d;
+        text-shadow: 2px 2px 4px rgba(255,255,255,0.8);
+    }
+    
+    /* Блоки успеха/инфо */
+    .stAlert {
+        background: rgba(255,255,255,0.9);
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+</style>
+""", unsafe_allow_html=True)
+
 st.title("🍕 Отчет Продукт")
+st.markdown("### ️ Генератор сводного отчёта по продукту")
 
 # ==================== НАСТРОЙКИ ====================
 
@@ -130,6 +202,7 @@ def read_main_file_raw(uploaded_file):
     return df
 
 def parse_main_file(uploaded_file):
+    """Возвращает данные, сгруппированные по ['Юридическое лицо', 'Категория_отчёт', 'Блюдо_очищенное']."""
     df = read_main_file_raw(uploaded_file)
     df = df[~df['Блюдо'].apply(is_half_pizza)]
     df['Категория_отчёт'] = df['Категория блюда'].astype(str).str.strip().str.lower().map(CATEGORY_MAPPING)
@@ -142,6 +215,11 @@ def parse_main_file(uploaded_file):
     }).reset_index()
 
 def parse_combo_file(uploaded_file):
+    """
+    Парсит файл комбо. 
+    ✅ КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: группируем СРАЗУ по ['Город', 'Категория_отчёт', 'Блюдо_очищенное'],
+    чтобы данные в Рейтинге и Комбо были идентичны.
+    """
     df = pd.read_excel(uploaded_file, header=None)
     header_row = None
     for idx, row in df.iterrows():
@@ -169,13 +247,26 @@ def parse_combo_file(uploaded_file):
     })
     df['Блюдо_очищенное'] = df['Блюдо_очищенное'].apply(clean_dish_name)
     df['Категория_отчёт'] = 'комбо и радости'
-    return df.groupby(['Юридическое лицо', 'Категория_отчёт', 'Блюдо_очищенное']).agg({
-        'Количество блюд': 'sum', 'Сумма со скидкой, р.': 'sum', 'Чеков': 'sum'
+    
+    # ✅ Добавляем город
+    df['Город'] = df['Юридическое лицо'].apply(map_city)
+    df = df[df['Город'].notna()]
+    
+    # ✅ ГРУППИРУЕМ ПО ГОРОДУ — это гарантирует одинаковые данные в обоих листах
+    return df.groupby(['Город', 'Категория_отчёт', 'Блюдо_очищенное']).agg({
+        'Количество блюд': 'sum',
+        'Сумма со скидкой, р.': 'sum',
+        'Чеков': 'sum'
     }).reset_index()
 
 # ==================== СОЗДАНИЕ ЛИСТОВ ====================
 
-def create_rating_sheet(wb, all_data):
+def create_rating_sheet(wb, df_main, df_combo):
+    """
+    Создаёт лист Рейтинг.
+    ✅ Комбо берутся из df_combo (уже сгруппированы по городу),
+    остальные данные — из df_main (сгруппированы по юр.лицу).
+    """
     ws = wb.create_sheet('Рейтинг')
     thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
     for idx, cat in enumerate(CATEGORIES_ORDER, 1):
@@ -192,12 +283,17 @@ def create_rating_sheet(wb, all_data):
             cell.border = thin_border
             cell.alignment = Alignment(horizontal='center', vertical='center')
     
-    all_data['Город'] = all_data['Юридическое лицо'].apply(map_city)
-    all_data = all_data[all_data['Город'].notna()]
-    all_data = all_data[all_data['Категория_отчёт'].isin(['пиццы', 'закуски', 'напитки', 'десерты', 'комбо и радости', 'завтраки'])]
+    # ✅ Обрабатываем основной файл (пиццы, закуски, напитки, десерты, радости)
+    df_main_rating = df_main.copy()
+    df_main_rating['Город'] = df_main_rating['Юридическое лицо'].apply(map_city)
+    df_main_rating = df_main_rating[df_main_rating['Город'].notna()]
+    df_main_rating = df_main_rating[df_main_rating['Категория_отчёт'].isin(['пиццы', 'закуски', 'напитки', 'десерты', 'комбо и радости', 'завтраки'])]
     
-    # ✅ ИСКЛЮЧАЕМ МАСТЕР-КЛАСС ИЗ КОМБО В РЕЙТИНГЕ
-    all_data = all_data[~all_data['Блюдо_очищенное'].str.lower().str.contains('мастер', na=False)]
+    # ✅ df_combo уже сгруппирован по городу — просто добавляем
+    df_combo_rating = df_combo.copy()
+    
+    # ✅ Объединяем
+    all_data = pd.concat([df_main_rating, df_combo_rating], ignore_index=True)
     
     city_items = {}
     max_items = 0
@@ -338,19 +434,14 @@ def create_pizza_sheet(wb, df_main_raw):
     create_table(tyumen_data, "Тюмень", 11, 1)
 
 def create_combo_sheet(wb, df_combo):
+    """
+    Создаёт лист Комбо.
+    ✅ df_combo уже сгруппирован по ['Город', 'Категория_отчёт', 'Блюдо_очищенное']
+    """
     ws = wb.create_sheet("Комбо")
     thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
     
-    df_combo = df_combo.copy()
-    df_combo['Город'] = df_combo['Юридическое лицо'].apply(map_city)
-    df_combo = df_combo[df_combo['Город'].notna()]
-    df_combo = df_combo[~df_combo['Блюдо_очищенное'].str.lower().str.contains('мастер', na=False)]
-    
-    grouped = df_combo.groupby(['Город', 'Блюдо_очищенное']).agg({
-        'Количество блюд': 'sum',
-        'Сумма со скидкой, р.': 'sum'
-    }).reset_index()
-    
+    # Данные уже сгруппированы по городу — просто используем
     ws.cell(1, 1, 'СПБ').font = Font(bold=True, size=12)
     ws.cell(1, 6, 'Тюмень').font = Font(bold=True, size=12)
     headers = ['Блюдо', 'Количество блюд', 'Сумма со скидкой, р.', '% от числа всех комбо']
@@ -363,7 +454,7 @@ def create_combo_sheet(wb, df_combo):
     
     city_data_1 = {}
     for city in ['СПБ', 'Тюмень']:
-        city_df = grouped[grouped['Город'] == city].copy()
+        city_df = df_combo[df_combo['Город'] == city].copy()
         total_qty = city_df['Количество блюд'].sum()
         city_df['%_qty'] = city_df['Количество блюд'] / total_qty if total_qty > 0 else 0
         city_df = city_df.sort_values('%_qty', ascending=False).reset_index(drop=True)
@@ -411,7 +502,7 @@ def create_combo_sheet(wb, df_combo):
     
     city_data_2 = {}
     for city in ['СПБ', 'Тюмень']:
-        city_df = grouped[grouped['Город'] == city].copy()
+        city_df = df_combo[df_combo['Город'] == city].copy()
         total_sum = city_df['Сумма со скидкой, р.'].sum()
         city_df['%_sum'] = city_df['Сумма со скидкой, р.'] / total_sum if total_sum > 0 else 0
         city_df = city_df.sort_values('%_sum', ascending=False).reset_index(drop=True)
@@ -476,10 +567,8 @@ def create_category_share_sheet(wb, df_main_raw, df_combo):
     df_main_share['Категория_доля'] = df_main_share.apply(classify_for_share, axis=1)
     df_main_share = df_main_share[df_main_share['Категория_доля'].notna()]
     
+    # ✅ df_combo уже сгруппирован по городу
     df_combo_share = df_combo.copy()
-    df_combo_share['Город'] = df_combo_share['Юридическое лицо'].apply(map_city)
-    df_combo_share = df_combo_share[df_combo_share['Город'].notna()]
-    df_combo_share = df_combo_share[~df_combo_share['Блюдо_очищенное'].str.lower().str.contains('мастер', na=False)]
     df_combo_share['Категория_доля'] = 'Сеты'
     
     df_all_share = pd.concat([df_main_share, df_combo_share], ignore_index=True)
@@ -588,9 +677,6 @@ def create_category_dynamics_sheet(wb, df_main_raw, df_combo):
     df_main_dyn = df_main_dyn[df_main_dyn['Категория_доля'].notna()]
     
     df_combo_dyn = df_combo.copy()
-    df_combo_dyn['Город'] = df_combo_dyn['Юридическое лицо'].apply(map_city)
-    df_combo_dyn = df_combo_dyn[df_combo_dyn['Город'].notna()]
-    df_combo_dyn = df_combo_dyn[~df_combo_dyn['Блюдо_очищенное'].str.lower().str.contains('мастер', na=False)]
     df_combo_dyn['Категория_доля'] = 'Сеты'
     
     df_all_dyn = pd.concat([df_main_dyn, df_combo_dyn], ignore_index=True)
@@ -658,12 +744,16 @@ def create_category_dynamics_sheet(wb, df_main_raw, df_combo):
 # ==================== ИНТЕРФЕЙС STREAMLIT ====================
 
 st.markdown("""
-Загрузите два файла для формирования отчета:
-1. **Основной файл** (OLAP-отчет с пиццами, закусками и т.д.)
-2. **Файл комбо** (OLAP-отчет с комбо-наборами)
-
-💡 *Названия файлов могут быть любыми — важна только структура данных внутри.*
-""")
+<div style="background: rgba(255,255,255,0.7); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+    <h3>📋 Инструкция</h3>
+    <p>Загрузите два файла для формирования отчета:</p>
+    <ol>
+        <li><b>Основной файл</b> — OLAP-отчет с пиццами, закусками и т.д.</li>
+        <li><b>Файл комбо</b> — OLAP-отчет с комбо-наборами (с суффиксом "к.")</li>
+    </ol>
+    <p>💡 <i>Названия файлов могут быть любыми — важна только структура данных внутри.</i></p>
+</div>
+""", unsafe_allow_html=True)
 
 col1, col2 = st.columns(2)
 with col1:
@@ -673,7 +763,7 @@ with col2:
 
 if file_main and file_combo:
     st.success("✅ Оба файла загружены!")
-    if st.button("🚀 Сгенерировать отчет", type="primary"):
+    if st.button("🚀 Сгенерировать отчет", type="primary", use_container_width=True):
         with st.spinner("⏳ Формирую отчет..."):
             try:
                 df_main_raw = read_main_file_raw(file_main)
@@ -681,13 +771,10 @@ if file_main and file_combo:
                 df_main = parse_main_file(file_main)
                 df_combo = parse_combo_file(file_combo)
                 
-                # ✅ Объединяем данные для листа Рейтинг
-                all_data = pd.concat([df_main, df_combo], ignore_index=True)
-                
                 wb = Workbook()
                 if 'Sheet' in wb.sheetnames: del wb['Sheet']
                 
-                create_rating_sheet(wb, all_data)
+                create_rating_sheet(wb, df_main, df_combo)
                 create_pizza_sheet(wb, df_main_raw)
                 create_combo_sheet(wb, df_combo)
                 create_category_share_sheet(wb, df_main_raw, df_combo)
@@ -697,7 +784,13 @@ if file_main and file_combo:
                 wb.save(output)
                 output.seek(0)
                 st.success("✅ Отчет сформирован!")
-                st.download_button(label="📥 Скачать Итоговый_отчет.xlsx", data=output, file_name="Итоговый_отчет_Продукт.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                st.download_button(
+                    label="📥 Скачать Итоговый_отчет.xlsx", 
+                    data=output, 
+                    file_name="Итоговый_отчет_Продукт.xlsx", 
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True
+                )
             except Exception as e:
                 st.error(f"❌ Ошибка: {str(e)}")
                 import traceback
