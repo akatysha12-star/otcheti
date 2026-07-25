@@ -390,30 +390,23 @@ st.markdown(f"""
 
 col1, col2, col3 = st.columns(3)
 
-# Кликабельные карточки с переходом на соответствующие страницы
-with col1:
+# КЛИКАБЕЛЬНЫЕ КАРТОЧКИ С ПЕРЕХОДОМ НА ОТЧЁТЫ
+def create_report_card(title, description, page_name, icon):
     st.markdown(f"""
-    <div class="report-card" onclick="window.location.href='?page=KR%20month'">
-        <h4 style="color: {sky_style['text_color']}; cursor: pointer;">📅 КР месяц</h4>
-        <p style="color: {sky_style['text_color']}; cursor: pointer;">Сводный отчёт за месяц с фильтрацией</p>
+    <div class="report-card" onclick="window.parent.document.location.href='/{page_name}'" style="cursor: pointer;">
+        <h4 style="color: {sky_style['text_color']}; margin: 0;">{icon} {title}</h4>
+        <p style="color: {sky_style['text_color']}; margin: 5px 0 0; font-size: 1em;">{description}</p>
     </div>
     """, unsafe_allow_html=True)
+
+with col1:
+    create_report_card("КР месяц", "Сводный отчёт за месяц с фильтрацией", "kr_month", "📅")
 
 with col2:
-    st.markdown(f"""
-    <div class="report-card" onclick="window.location.href='?page=KR%20week'">
-        <h4 style="color: {sky_style['text_color']}; cursor: pointer;">📆 КР неделя</h4>
-        <p style="color: {sky_style['text_color']}; cursor: pointer;">Еженедельный сводный отчёт</p>
-    </div>
-    """, unsafe_allow_html=True)
+    create_report_card("КР неделя", "Еженедельный сводный отчёт", "kr_week", "📆")
 
 with col3:
-    st.markdown(f"""
-    <div class="report-card" onclick="window.location.href='?page=prodykt'">
-        <h4 style="color: {sky_style['text_color']}; cursor: pointer;">🍕 Продукт</h4>
-        <p style="color: {sky_style['text_color']}; cursor: pointer;">Полный отчёт по продуктам</p>
-    </div>
-    """, unsafe_allow_html=True)
+    create_report_card("Продукт", "Полный отчёт по продуктам", "produkt", "🍕")
 
 # Праздник и GIF
 holiday_message = get_today_holiday()
