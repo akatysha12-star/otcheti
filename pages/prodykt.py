@@ -647,6 +647,14 @@ def create_category_dynamics_sheet(wb, df_main_raw, df_combo):
         c2 = ws.cell(row, 3, pct_sum)
         c2.border = thin_border
         c2.number_format = '0.00%'
+        
+        # После создания all_data добавить:
+print("=== ОТЛАДКА ===")
+print(f"Колонки all_data: {all_data.columns.tolist()}")
+print(f"Всего строк: {len(all_data)}")
+print(f"Уникальных категорий: {all_data['Категория_отчёт'].unique()}")
+print(f"Категория 'комбо и радости': {len(all_data[all_data['Категория_отчёт'] == 'комбо и радости'])} строк")
+print(f"Категория 'пиццы': {len(all_data[all_data['Категория_отчёт'] == 'пиццы'])} строк")
 
 # ==================== ИНТЕРФЕЙС STREAMLIT ====================
 
