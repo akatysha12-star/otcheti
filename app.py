@@ -7,7 +7,7 @@ st.set_page_config(
     page_title=f"{BRAND_NAME} | Отчёты",
     page_icon="🍕",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 MSK = timezone(timedelta(hours=3))
