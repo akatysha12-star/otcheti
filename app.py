@@ -323,7 +323,6 @@ st.markdown(f"""
 
 def get_today_holiday():
     """Возвращает праздник на сегодняшний день."""
-
     try:
         if not HOLIDAYS_FILE.exists():
             return "🌟 Хорошего дня!"
@@ -332,28 +331,12 @@ def get_today_holiday():
             holidays = json.load(f)
 
         today_key = datetime.now().strftime("%m-%d")
-
         return holidays.get(today_key, "🌟 Хорошего дня!")
-
     except Exception:
         return "🌟 Отличного настроения!"
-    try:
-        holidays_file = os.path.join(os.path.dirname(__file__), 'holidays.json')
-        if os.path.exists(holidays_file):
-            with open(holidays_file, 'r', encoding='utf-8') as f:
-                holidays = json.load(f)
-            today = datetime.now()
-            today_key = f"{today.month:02d}-{today.day:02d}"
-            if today_key in holidays:
-                return holidays[today_key]
-        return "🌟 Хорошего дня!"
-    except Exception as e:
-        return "🌟 Отличного настроения!"
 
-def get_local_gif():
-    def get_greeting():
+def get_greeting():
     """Возвращает приветствие в зависимости от времени суток."""
-
     greetings = {
         "morning": "🌤 Доброго утречка!",
         "day": "☀ Доброго денёчка!",
@@ -362,32 +345,22 @@ def get_local_gif():
         "night": "👀 Пупупум... а кто это тут не спит?",
         "dawn": "🌤 Доброго утречка!"
     }
+    return greetings.get(time_of_day, "👋 Добро пожаловать!")
 
-    return greetings.get(time_of_day, "👋 Добро пожаловать!") 
-    
+def get_local_gif():
     """Загружает GIF из папки assets."""
-
-    possible_names = [
-        "animation.gif",
-        "animation.GIF",
-        "Animation.gif",
-        "my_gif.gif"
-    ]
-
+    possible_names = ["animation.gif", "animation.GIF", "Animation.gif", "my_gif.gif"]
     try:
         for name in possible_names:
             gif_path = ASSETS_DIR / name
-
             if gif_path.exists():
                 with open(gif_path, "rb") as f:
                     gif_base64 = base64.b64encode(f.read()).decode()
-
                 return f"data:image/gif;base64,{gif_base64}"
-
     except Exception:
         pass
-
     return None
+    
     try:
         possible_names = ['animation.gif', 'animation.GIF', 'Animation.gif', 'my_gif.gif']
         for name in possible_names:
