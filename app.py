@@ -326,10 +326,8 @@ def get_today_holiday():
     try:
         if not HOLIDAYS_FILE.exists():
             return "🌟 Хорошего дня!"
-
         with open(HOLIDAYS_FILE, "r", encoding="utf-8") as f:
             holidays = json.load(f)
-
         today_key = datetime.now().strftime("%m-%d")
         return holidays.get(today_key, "🌟 Хорошего дня!")
     except Exception:
@@ -360,7 +358,6 @@ def get_local_gif():
     except Exception:
         pass
     return None
-    
     try:
         possible_names = ['animation.gif', 'animation.GIF', 'Animation.gif', 'my_gif.gif']
         for name in possible_names:
